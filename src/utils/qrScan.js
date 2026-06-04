@@ -35,6 +35,14 @@ export function parseAttendanceQrScan(raw) {
   return { kind: 'member', token: trimmed };
 }
 
+/** Extract gym venue token from a scanned QR (URL or FC-GYM-… raw token). */
+export function parseVenueQrScan(raw) {
+  const parsed = parseAttendanceQrScan(raw);
+  if (!parsed?.token) return null;
+  if (parsed.kind === 'venue') return parsed.token;
+  return null;
+}
+
 export function buildMemberDeskQrValue(qrToken) {
   if (!qrToken) return '';
   const origin = typeof window !== 'undefined' ? window.location.origin : '';

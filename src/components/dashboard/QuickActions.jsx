@@ -23,14 +23,14 @@ const actionsByRole = {
   [ROLES.MEMBER]: [
     {
       to: '/attendance',
-      label: 'My visits',
-      desc: 'Scan gym QR at entry',
+      label: 'Check in',
+      desc: 'Scan gym QR in app',
       icon: '✅',
       primary: true,
     },
-    { to: '/profile', label: 'Desk QR', desc: 'For staff scan', icon: '📱' },
     { to: '/plans', label: 'Plans', desc: 'Subscribe', icon: '📋', primary: true },
     { to: '/payments', label: 'Payments', desc: 'Receipts', icon: '💳' },
+    { to: '/profile', label: 'Profile', desc: 'Your account', icon: '👤' },
   ],
 };
 

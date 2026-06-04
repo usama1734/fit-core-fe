@@ -64,8 +64,8 @@ export default function GymQrPanel() {
     <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
       <h2 className="text-lg font-semibold text-white">Gym entrance QR</h2>
       <p className="mt-2 max-w-xl text-sm text-slate-400">
-        Print this code and post it at the entrance. Members scan it with their phone camera, sign
-        in if needed, and check in automatically.
+        Print this poster and place it at the gym entrance. Members open the FitCore app, go to
+        Attendance, and scan this code to check in.
       </p>
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}

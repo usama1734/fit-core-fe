@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import * as authApi from '../api/auth.api.js';
 import * as membersApi from '../api/members.api.js';
-import QrDisplay from '../components/qr/QrDisplay.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -14,7 +13,6 @@ import {
   MEMBER_PAYMENT_STATUS,
 } from '../utils/paymentStatus.js';
 import { ROLES } from '../utils/roles.js';
-import { buildMemberDeskQrValue } from '../utils/qrScan.js';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -23,7 +21,6 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [regenerating, setRegenerating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,20 +43,6 @@ export default function ProfilePage() {
   useEffect(() => {
     load();
   }, [load, location.key]);
-
-  const handleRegenerateQr = async () => {
-    if (!profile?.id) return;
-    setRegenerating(true);
-    setError('');
-    try {
-      const updated = await membersApi.regenerateQr(profile.id);
-      setProfile(updated);
-    } catch (err) {
-      setError(getApiError(err));
-    } finally {
-      setRegenerating(false);
-    }
-  };
 
   if (loading) return <LoadingSpinner />;
   if (error && !profile) {
@@ -143,35 +126,9 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <PageHeader
-        title="My Profile"
-        description="Membership details, trainer, and attendance QR code"
-      />
+      <PageHeader title="My Profile" description="Membership details and trainer" />
 
       {error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
-
-      <section className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-        <div className="flex flex-col items-center text-center">
-          {profile?.qrToken ? (
-            <QrDisplay value={buildMemberDeskQrValue(profile.qrToken)} size={260} />
-          ) : (
-            <p className="text-sm text-slate-400">No QR token yet.</p>
-          )}
-          <h2 className="mt-6 text-lg font-semibold text-white">Desk QR code (staff)</h2>
-          <p className="mt-2 max-w-md text-sm text-slate-400">
-            Show this code at the front desk. For entrance check-in, scan the gym poster QR with
-            your phone instead.
-          </p>
-          <button
-            type="button"
-            onClick={handleRegenerateQr}
-            disabled={regenerating}
-            className="mt-4 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
-          >
-            {regenerating ? 'Regenerating…' : 'Regenerate QR code'}
-          </button>
-        </div>
-      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">

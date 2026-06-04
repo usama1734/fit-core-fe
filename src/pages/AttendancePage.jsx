@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePaginatedList } from '../hooks/usePaginatedList.js';
 import * as attendanceApi from '../api/attendance.api.js';
@@ -6,6 +5,7 @@ import * as membersApi from '../api/members.api.js';
 import * as trainersApi from '../api/trainers.api.js';
 import AttendanceCheckIn from '../components/attendance/AttendanceCheckIn.jsx';
 import GymQrPanel from '../components/attendance/GymQrPanel.jsx';
+import MemberGymScanCheckIn from '../components/attendance/MemberGymScanCheckIn.jsx';
 import DataTable from '../components/ui/DataTable.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -23,7 +23,8 @@ export default function AttendancePage() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [tab, setTab] = useState(canScan ? 'checkin' : 'history');
+  const isMember = user.role === ROLES.MEMBER;
+  const [tab, setTab] = useState(canScan ? 'checkin' : 'checkin');
 
   const fetchRecords = useCallback((params) => attendanceApi.listAttendance(params), []);
 
@@ -105,11 +106,33 @@ export default function AttendancePage() {
     [reloadRecords],
   );
 
-  const onSelfCheckIn = async () => {
-    await handleCheckIn({ method: 'MANUAL' });
-  };
+  const memberColumns = [
+    { key: 'method', label: 'Method' },
+    { key: 'checkInAt', label: 'Check in', render: (r) => formatDate(r.checkInAt) },
+    {
+      key: 'checkOutAt',
+      label: 'Check out',
+      render: (r) => formatDate(r.checkOutAt),
+    },
+    {
+      key: 'actions',
+      label: '',
+      render: (r) =>
+        !r.checkOutAt ? (
+          <button
+            type="button"
+            onClick={() => handleCheckOut(r.id)}
+            className="min-h-[44px] text-sm font-medium text-teal-400 hover:underline"
+          >
+            Check out
+          </button>
+        ) : (
+          <span className="text-slate-500">Done</span>
+        ),
+    },
+  ];
 
-  const columns = [
+  const staffColumns = [
     {
       key: 'member',
       label: 'Member',
@@ -140,6 +163,8 @@ export default function AttendancePage() {
     },
   ];
 
+  const columns = isMember ? memberColumns : staffColumns;
+
   if (loading && records.length === 0 && membersLoading) {
     return <LoadingSpinner />;
   }
@@ -149,7 +174,9 @@ export default function AttendancePage() {
       <PageHeader
         title="Attendance"
         description={
-          canScan ? 'Fast check-in: scan QR or tap a member name' : 'Your gym visit history'
+          canScan
+            ? 'Fast check-in: scan QR or tap a member name'
+            : 'Scan the gym check-in QR poster from this page'
         }
       />
 
@@ -212,38 +239,18 @@ export default function AttendancePage() {
         />
       )}
 
-      {user.role === ROLES.MEMBER && (
-        <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="font-semibold text-white">Check in at the gym</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Scan the entrance QR poster with your phone camera. You will be signed in here if
-            needed, then your visit is recorded. You can also check in manually below.
-          </p>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-            <Link
-              to="/profile"
-              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg border border-slate-600 text-sm text-slate-300 hover:bg-slate-800"
-            >
-              Desk QR (staff)
-            </Link>
-            <button
-              type="button"
-              onClick={onSelfCheckIn}
-              className="min-h-[48px] flex-1 rounded-lg bg-teal-600 text-sm font-medium text-white hover:bg-teal-500"
-            >
-              Manual check-in
-            </button>
-          </div>
-          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-          {success && <p className="mt-3 text-sm text-teal-400">{success}</p>}
-        </div>
-      )}
+      {isMember && <MemberGymScanCheckIn onCheckedIn={() => reloadRecords()} />}
 
-      {(!canScan || tab === 'history') && (
+      {(canScan && tab === 'history') || isMember ? (
         <>
           <h2 className="mb-4 text-lg font-semibold text-white">
             {canScan ? 'Attendance history' : 'Your visits'}
           </h2>
+          {isMember && openRecords.length > 0 && (
+            <p className="mb-4 text-sm text-amber-400/90">
+              You are checked in. Use Check out below when you leave.
+            </p>
+          )}
           {loading ? (
             <LoadingSpinner />
           ) : (
@@ -262,7 +269,7 @@ export default function AttendancePage() {
             />
           )}
         </>
-      )}
+      ) : null}
     </div>
   );
 }
