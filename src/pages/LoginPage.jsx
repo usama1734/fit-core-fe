@@ -1,18 +1,21 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getApiError } from '../api/client.js';
+import { getSafeRedirect } from '../utils/redirect.js';
 
 export default function LoginPage() {
   const { user, login, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = getSafeRedirect(searchParams.get('redirect'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!authLoading && user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={redirectTo ?? '/dashboard'} replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -21,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(redirectTo ?? '/dashboard');
     } catch (err) {
       setError(getApiError(err));
     } finally {

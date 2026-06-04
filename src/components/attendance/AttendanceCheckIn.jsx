@@ -42,10 +42,7 @@ export default function AttendanceCheckIn({
       .sort((a, b) => fullName(a.user).localeCompare(fullName(b.user)));
   }, [members, openByMemberId, search]);
 
-  const inGym = useMemo(
-    () => openRecords.filter((r) => !r.checkOutAt),
-    [openRecords],
-  );
+  const inGym = useMemo(() => openRecords.filter((r) => !r.checkOutAt), [openRecords]);
 
   const runCheckIn = useCallback(
     async (payload) => {
@@ -128,9 +125,7 @@ export default function AttendanceCheckIn({
       {(success || error || lastSuccess) && (
         <div
           className={`rounded-xl border p-4 ${
-            error
-              ? 'border-red-500/30 bg-red-500/10'
-              : 'border-teal-500/30 bg-teal-500/10'
+            error ? 'border-red-500/30 bg-red-500/10' : 'border-teal-500/30 bg-teal-500/10'
           }`}
         >
           {error && <p className="text-sm text-red-400">{error}</p>}
@@ -155,9 +150,7 @@ export default function AttendanceCheckIn({
       {/* Currently in gym — quick checkout */}
       {inGym.length > 0 && (
         <section className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-          <h3 className="text-sm font-semibold text-amber-300">
-            In gym now ({inGym.length})
-          </h3>
+          <h3 className="text-sm font-semibold text-amber-300">In gym now ({inGym.length})</h3>
           <div className="mt-3 flex flex-wrap gap-2">
             {inGym.map((r) => (
               <button
@@ -198,9 +191,7 @@ export default function AttendanceCheckIn({
 
       {mode === 'manual' && (
         <section className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
-          <label className="mb-2 block text-xs font-medium text-slate-400">
-            Search member
-          </label>
+          <label className="mb-2 block text-xs font-medium text-slate-400">Search member</label>
           <input
             type="search"
             value={search}

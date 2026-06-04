@@ -5,7 +5,7 @@ export default function Navbar({ onMenuClick, title }) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-slate-800 bg-slate-950/90 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-800 bg-slate-950/95 px-4 backdrop-blur sm:px-6">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -22,9 +22,7 @@ export default function Navbar({ onMenuClick, title }) {
         )}
       </div>
       <div className="flex items-center gap-3">
-        <p className="hidden truncate text-sm font-medium text-white sm:block">
-          {fullName(user)}
-        </p>
+        <p className="hidden truncate text-sm font-medium text-white sm:block">{fullName(user)}</p>
         <button
           type="button"
           onClick={logout}

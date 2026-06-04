@@ -1,50 +1,106 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import * as trainersApi from '../api/trainers.api.js';
 import DataTable from '../components/ui/DataTable.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import ModalForm from '../components/ui/ModalForm.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import { usePaginatedList } from '../hooks/usePaginatedList.js';
 import { getApiError } from '../api/client.js';
 import { fullName } from '../utils/format.js';
 
 export default function TrainersPage() {
-  const [trainers, setTrainers] = useState([]);
-  const [selectedMembers, setSelectedMembers] = useState([]);
+  const { trainerId } = useParams();
+  const navigate = useNavigate();
   const [selectedTrainer, setSelectedTrainer] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [memberPage, setMemberPage] = useState(1);
+  const [memberPageSize, setMemberPageSize] = useState(10);
+  const [memberItems, setMemberItems] = useState([]);
+  const [memberMeta, setMemberMeta] = useState({ total: 0, totalPages: 1 });
   const [membersLoading, setMembersLoading] = useState(false);
-  const [error, setError] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const loadTrainers = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const data = await trainersApi.listTrainers();
-      setTrainers(data);
-    } catch (err) {
-      setError(getApiError(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchTrainers = useCallback((params) => trainersApi.listTrainers(params), []);
+
+  const {
+    items: trainers,
+    meta,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    loading,
+    error,
+    setError,
+    reload: loadTrainers,
+  } = usePaginatedList(fetchTrainers);
 
   useEffect(() => {
-    loadTrainers();
-  }, [loadTrainers]);
-
-  const viewMembers = async (trainer) => {
-    setSelectedTrainer(trainer);
-    setMembersLoading(true);
-    try {
-      const members = await trainersApi.getTrainerMembers(trainer.id);
-      setSelectedMembers(members);
-    } catch (err) {
-      setError(getApiError(err));
-    } finally {
-      setMembersLoading(false);
+    if (!trainerId) {
+      setSelectedTrainer(null);
+      return;
     }
+
+    let cancelled = false;
+    async function loadTrainer() {
+      setMembersLoading(true);
+      setError('');
+      try {
+        const trainer = await trainersApi.getTrainer(trainerId);
+        if (cancelled) return;
+        setSelectedTrainer(trainer);
+      } catch (err) {
+        if (!cancelled) setError(getApiError(err));
+      } finally {
+        if (!cancelled) setMembersLoading(false);
+      }
+    }
+
+    loadTrainer();
+    return () => {
+      cancelled = true;
+    };
+  }, [trainerId, setError]);
+
+  useEffect(() => {
+    if (!trainerId) {
+      setMemberItems([]);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadMembers() {
+      setMembersLoading(true);
+      try {
+        const result = await trainersApi.getTrainerMembers(trainerId, {
+          page: memberPage,
+          pageSize: memberPageSize,
+        });
+        if (!cancelled) {
+          setMemberItems(result.items);
+          setMemberMeta(result.meta);
+        }
+      } catch (err) {
+        if (!cancelled) setError(getApiError(err));
+      } finally {
+        if (!cancelled) setMembersLoading(false);
+      }
+    }
+
+    loadMembers();
+    return () => {
+      cancelled = true;
+    };
+  }, [trainerId, memberPage, memberPageSize, setError]);
+
+  const viewMembers = (trainer) => {
+    navigate(`/trainers/${trainer.id}`);
+  };
+
+  const closeMembers = () => {
+    navigate('/trainers');
+    setMemberPage(1);
   };
 
   const handleCreate = async (values) => {
@@ -85,7 +141,7 @@ export default function TrainersPage() {
     { key: 'plan', label: 'Plan', render: (r) => r.membershipPlan?.name ?? '—' },
   ];
 
-  if (loading) return <LoadingSpinner />;
+  if (loading && trainers.length === 0) return <LoadingSpinner />;
 
   return (
     <div>
@@ -103,7 +159,19 @@ export default function TrainersPage() {
         }
       />
       {error && <p className="mb-4 text-red-400">{error}</p>}
-      <DataTable columns={columns} data={trainers} emptyMessage="No trainers" />
+      <DataTable
+        columns={columns}
+        data={trainers}
+        emptyMessage="No trainers"
+        pagination={{
+          page,
+          pageSize,
+          total: meta.total,
+          totalPages: meta.totalPages,
+          onPageChange: setPage,
+          onPageSizeChange: setPageSize,
+        }}
+      />
 
       {selectedTrainer && (
         <div className="mt-8 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
@@ -113,22 +181,30 @@ export default function TrainersPage() {
             </h2>
             <button
               type="button"
-              onClick={() => {
-                setSelectedTrainer(null);
-                setSelectedMembers([]);
-              }}
+              onClick={closeMembers}
               className="text-sm text-slate-400 hover:text-white"
             >
               Close
             </button>
           </div>
-          {membersLoading ? (
+          {membersLoading && memberItems.length === 0 ? (
             <LoadingSpinner />
           ) : (
             <DataTable
               columns={memberColumns}
-              data={selectedMembers}
+              data={memberItems}
               emptyMessage="No assigned members"
+              pagination={{
+                page: memberPage,
+                pageSize: memberPageSize,
+                total: memberMeta.total,
+                totalPages: memberMeta.totalPages,
+                onPageChange: setMemberPage,
+                onPageSizeChange: (size) => {
+                  setMemberPageSize(size);
+                  setMemberPage(1);
+                },
+              }}
             />
           )}
         </div>

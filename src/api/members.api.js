@@ -1,8 +1,9 @@
 import { apiClient } from './client.js';
+import { parseListResponse } from './pagination.js';
 
-export async function listMembers() {
-  const { data } = await apiClient.get('/members');
-  return data.data;
+export async function listMembers({ page = 1, pageSize = 10 } = {}) {
+  const { data } = await apiClient.get('/members', { params: { page, pageSize } });
+  return parseListResponse(data, { page, pageSize });
 }
 
 export async function getMember(id) {

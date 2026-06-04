@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePaginatedList } from '../hooks/usePaginatedList.js';
 import * as attendanceApi from '../api/attendance.api.js';
 import * as membersApi from '../api/members.api.js';
 import * as trainersApi from '../api/trainers.api.js';
@@ -10,57 +11,69 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getApiError } from '../api/client.js';
 import { formatDate, formatDateShort, fullName } from '../utils/format.js';
-import {
-  formatMemberPaymentStatus,
-  memberPaymentStatusClass,
-} from '../utils/paymentStatus.js';
+import { formatMemberPaymentStatus, memberPaymentStatusClass } from '../utils/paymentStatus.js';
 import { ROLES } from '../utils/roles.js';
 
 export default function MembersPage() {
   const { user } = useAuth();
   const isAdmin = user.role === ROLES.ADMIN;
   const isTrainer = user.role === ROLES.TRAINER;
-  const [members, setMembers] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [attendanceTotal, setAttendanceTotal] = useState(0);
   const [trainers, setTrainers] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [auxLoading, setAuxLoading] = useState(true);
+  const [auxError, setAuxError] = useState('');
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState(false);
   const [expandedMemberId, setExpandedMemberId] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const fetchMembers = useCallback(
+    (params) =>
+      isTrainer ? trainersApi.getMyAssignedMembers(params) : membersApi.listMembers(params),
+    [isTrainer],
+  );
+
+  const {
+    items: members,
+    meta,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    loading,
+    error: listError,
+    setError: setListError,
+    reload: reloadMembers,
+  } = usePaginatedList(fetchMembers, [isTrainer]);
+
+  const loadAux = useCallback(async () => {
+    setAuxLoading(true);
     try {
       if (isTrainer) {
-        const [memberList, attendanceList] = await Promise.all([
-          trainersApi.getMyAssignedMembers(),
-          attendanceApi.listAttendance(),
+        const attendanceResult = await attendanceApi.listAttendance({ page: 1, pageSize: 100 });
+        setAttendance(attendanceResult.items);
+        setAttendanceTotal(attendanceResult.meta.total);
+      } else if (isAdmin) {
+        const [t, p] = await Promise.all([
+          trainersApi.listTrainers({ page: 1, pageSize: 100 }),
+          plansApi.listPlans({ page: 1, pageSize: 100 }),
         ]);
-        setMembers(memberList);
-        setAttendance(attendanceList);
-      } else {
-        const [m, t, p] = await Promise.all([
-          membersApi.listMembers(),
-          isAdmin ? trainersApi.listTrainers() : Promise.resolve([]),
-          isAdmin ? plansApi.listPlans() : Promise.resolve([]),
-        ]);
-        setMembers(m);
-        setTrainers(t);
-        setPlans(p);
+        setTrainers(t.items);
+        setPlans(p.items);
       }
     } catch (err) {
-      setError(getApiError(err));
+      setAuxError(getApiError(err));
     } finally {
-      setLoading(false);
+      setAuxLoading(false);
     }
   }, [isAdmin, isTrainer]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadAux();
+  }, [loadAux]);
+
+  const load = reloadMembers;
 
   const attendanceByMember = useMemo(() => {
     const map = new Map();
@@ -94,7 +107,6 @@ export default function MembersPage() {
       };
       if (isAdmin) {
         payload.trainerId = values.trainerId || undefined;
-        payload.membershipPlanId = values.membershipPlanId || undefined;
       }
       await membersApi.createMember(payload);
       await load();
@@ -171,7 +183,7 @@ export default function MembersPage() {
           {
             key: 'visits',
             label: 'Visits',
-            render: (r) => (attendanceByMember.get(r.id)?.length ?? 0),
+            render: (r) => attendanceByMember.get(r.id)?.length ?? 0,
           },
           {
             key: 'lastVisit',
@@ -230,7 +242,8 @@ export default function MembersPage() {
       )
     : [];
 
-  if (loading) return <LoadingSpinner />;
+  const displayError = listError || auxError;
+  if ((loading || auxLoading) && members.length === 0) return <LoadingSpinner />;
 
   return (
     <div>
@@ -253,17 +266,17 @@ export default function MembersPage() {
           )
         }
       />
-      {error && <p className="mb-4 text-red-400">{error}</p>}
+      {displayError && <p className="mb-4 text-red-400">{displayError}</p>}
 
       {isTrainer && (
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className="text-sm text-slate-400">Assigned members</p>
-            <p className="text-2xl font-bold text-white">{members.length}</p>
+            <p className="text-2xl font-bold text-white">{meta.total}</p>
           </div>
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className="text-sm text-slate-400">Total check-ins</p>
-            <p className="text-2xl font-bold text-white">{attendance.length}</p>
+            <p className="text-2xl font-bold text-white">{attendanceTotal}</p>
           </div>
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className="text-sm text-slate-400">Open sessions</p>
@@ -274,7 +287,19 @@ export default function MembersPage() {
         </div>
       )}
 
-      <DataTable columns={columns} data={members} emptyMessage="No members" />
+      <DataTable
+        columns={columns}
+        data={members}
+        emptyMessage="No members"
+        pagination={{
+          page,
+          pageSize,
+          total: meta.total,
+          totalPages: meta.totalPages,
+          onPageChange: setPage,
+          onPageSizeChange: setPageSize,
+        }}
+      />
 
       {expandedMemberId && (
         <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
@@ -296,6 +321,8 @@ export default function MembersPage() {
               ]}
               data={expandedRecords}
               emptyMessage="No records"
+              paginateLocally
+              defaultPageSize={5}
             />
           )}
         </div>
@@ -321,10 +348,7 @@ export default function MembersPage() {
           },
           { name: 'phone', label: 'Phone' },
           ...(modal?.type === 'create'
-            ? [
-                { name: 'trainerId', label: 'Trainer', type: 'select', options: trainerOptions },
-                { name: 'membershipPlanId', label: 'Plan', type: 'select', options: planOptions },
-              ]
+            ? [{ name: 'trainerId', label: 'Trainer', type: 'select', options: trainerOptions }]
             : []),
         ]}
         onSubmit={handleCreate}
@@ -336,7 +360,13 @@ export default function MembersPage() {
         title="Assign Trainer"
         loading={saving}
         fields={[
-          { name: 'trainerId', label: 'Trainer', type: 'select', required: true, options: trainerOptions },
+          {
+            name: 'trainerId',
+            label: 'Trainer',
+            type: 'select',
+            required: true,
+            options: trainerOptions,
+          },
         ]}
         onSubmit={handleAssignTrainer}
       />
@@ -347,7 +377,13 @@ export default function MembersPage() {
         title="Assign Plan"
         loading={saving}
         fields={[
-          { name: 'membershipPlanId', label: 'Plan', type: 'select', required: true, options: planOptions },
+          {
+            name: 'membershipPlanId',
+            label: 'Plan',
+            type: 'select',
+            required: true,
+            options: planOptions,
+          },
         ]}
         onSubmit={handleAssignPlan}
       />

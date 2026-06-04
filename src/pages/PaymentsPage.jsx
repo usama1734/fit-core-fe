@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as paymentsApi from '../api/payments.api.js';
 import DataTable from '../components/ui/DataTable.jsx';
@@ -6,11 +6,9 @@ import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getApiError } from '../api/client.js';
+import { usePaginatedList } from '../hooks/usePaginatedList.js';
 import { formatCurrency, formatDate, fullName } from '../utils/format.js';
-import {
-  formatMemberPaymentStatus,
-  memberPaymentStatusClass,
-} from '../utils/paymentStatus.js';
+import { formatMemberPaymentStatus, memberPaymentStatusClass } from '../utils/paymentStatus.js';
 import { ROLES } from '../utils/roles.js';
 
 const statusColors = {
@@ -31,34 +29,29 @@ export default function PaymentsPage() {
   const { user } = useAuth();
   const isAdmin = user.role === ROLES.ADMIN;
   const isMember = user.role === ROLES.MEMBER;
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const p = await paymentsApi.listPayments();
-      setPayments(p);
-    } catch (err) {
-      setError(getApiError(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchPayments = useCallback((params) => paymentsApi.listPayments(params), []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const {
+    items: payments,
+    meta,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    loading,
+    error,
+    setError,
+    reload,
+  } = usePaginatedList(fetchPayments);
 
   const handleSync = async () => {
     setSyncing(true);
     setError('');
     try {
-      const p = await paymentsApi.syncPayments();
-      setPayments(p);
+      await paymentsApi.syncPayments({ page, pageSize });
+      await reload();
     } catch (err) {
       setError(getApiError(err));
     } finally {
@@ -144,23 +137,33 @@ export default function PaymentsPage() {
             {pendingCount} pending checkout{pendingCount > 1 ? 's' : ''}
           </p>
           <p className="mt-1 text-slate-300">
-            <strong>PENDING</strong> means you clicked Subscribe and we created a Stripe
-            checkout, but payment was not confirmed in FitCore yet. Common causes: closing the
-            tab before paying, cancelling checkout, or the success page failing to activate your
-            plan. If you already paid, click <strong>Sync with Stripe</strong> — paid sessions
-            will move to <strong>COMPLETED</strong> and your plan will update.
+            <strong>PENDING</strong> means you clicked Subscribe and we created a Stripe checkout,
+            but payment was not confirmed in FitCore yet. Common causes: closing the tab before
+            paying, cancelling checkout, or the success page failing to activate your plan. If you
+            already paid, click <strong>Sync with Stripe</strong> — paid sessions will move to{' '}
+            <strong>COMPLETED</strong> and your plan will update.
           </p>
         </div>
       )}
 
-      {error && (
-        <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
 
-      {loading ? (
+      {loading && payments.length === 0 ? (
         <LoadingSpinner />
       ) : (
-        <DataTable columns={columns} data={payments} emptyMessage="No payments yet" />
+        <DataTable
+          columns={columns}
+          data={payments}
+          emptyMessage="No payments yet"
+          pagination={{
+            page,
+            pageSize,
+            total: meta.total,
+            totalPages: meta.totalPages,
+            onPageChange: setPage,
+            onPageSizeChange: setPageSize,
+          }}
+        />
       )}
     </div>
   );

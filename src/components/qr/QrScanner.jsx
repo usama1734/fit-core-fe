@@ -61,9 +61,7 @@ export default function QrScanner({ onScan, onError, active = true }) {
           throw new Error('No camera found on this device');
         }
 
-        const backCamera = cameras.find((c) =>
-          /back|rear|environment/i.test(c.label ?? ''),
-        );
+        const backCamera = cameras.find((c) => /back|rear|environment/i.test(c.label ?? ''));
         const cameraId = backCamera?.id ?? cameras[cameras.length - 1].id;
 
         const scanner = new Html5Qrcode(regionId);
@@ -117,9 +115,7 @@ export default function QrScanner({ onScan, onError, active = true }) {
           Starting camera…
         </p>
       )}
-      {cameraError && (
-        <p className="p-4 text-center text-sm text-red-400">{cameraError}</p>
-      )}
+      {cameraError && <p className="p-4 text-center text-sm text-red-400">{cameraError}</p>}
     </div>
   );
 }

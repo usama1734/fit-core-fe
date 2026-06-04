@@ -59,9 +59,7 @@ export default function PaymentSuccessPage() {
 
       {loading && <LoadingSpinner />}
 
-      {error && (
-        <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
 
       {!loading && !error && (
         <div className="rounded-2xl border border-teal-500/30 bg-teal-500/10 p-8">
@@ -89,8 +87,8 @@ export default function PaymentSuccessPage() {
       {!loading && error && (
         <div className="mb-4 space-y-3">
           <p className="text-sm text-slate-400">
-            Stripe charged your card, but the app could not activate your plan yet. Restart the
-            API server if you are on localhost, then retry below.
+            Stripe charged your card, but the app could not activate your plan yet. Restart the API
+            server if you are on localhost, then retry below.
           </p>
           <button
             type="button"

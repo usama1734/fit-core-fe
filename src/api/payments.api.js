@@ -1,8 +1,9 @@
 import { apiClient } from './client.js';
+import { parseListResponse } from './pagination.js';
 
-export async function listPayments() {
-  const { data } = await apiClient.get('/payments');
-  return data.data;
+export async function listPayments({ page = 1, pageSize = 10 } = {}) {
+  const { data } = await apiClient.get('/payments', { params: { page, pageSize } });
+  return parseListResponse(data, { page, pageSize });
 }
 
 export async function createCheckout(planId) {
@@ -15,9 +16,9 @@ export async function confirmCheckout(sessionId) {
   return data.data;
 }
 
-export async function syncPayments() {
-  const { data } = await apiClient.post('/payments/sync');
-  return data.data;
+export async function syncPayments({ page = 1, pageSize = 10 } = {}) {
+  const { data } = await apiClient.post('/payments/sync', null, { params: { page, pageSize } });
+  return parseListResponse(data, { page, pageSize });
 }
 
 export async function createManualPayment(payload) {

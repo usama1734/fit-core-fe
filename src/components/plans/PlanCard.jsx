@@ -18,9 +18,7 @@ export default function PlanCard({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-xl font-bold text-white">{plan.name}</h3>
-          {plan.description && (
-            <p className="mt-1 text-sm text-slate-400">{plan.description}</p>
-          )}
+          {plan.description && <p className="mt-1 text-sm text-slate-400">{plan.description}</p>}
         </div>
         {isCurrent && (
           <span className="shrink-0 rounded-full bg-teal-500/20 px-2.5 py-1 text-xs font-medium text-teal-400">
@@ -55,7 +53,11 @@ export default function PlanCard({
             disabled={checkoutLoading || isCurrent}
             className="flex-1 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {checkoutLoading ? 'Redirecting…' : isCurrent ? 'Current plan' : 'Subscribe with Stripe'}
+            {checkoutLoading
+              ? 'Redirecting…'
+              : isCurrent
+                ? 'Current plan'
+                : 'Subscribe with Stripe'}
           </button>
         )}
 

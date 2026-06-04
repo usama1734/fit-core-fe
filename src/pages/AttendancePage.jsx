@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePaginatedList } from '../hooks/usePaginatedList.js';
 import * as attendanceApi from '../api/attendance.api.js';
 import * as membersApi from '../api/members.api.js';
 import * as trainersApi from '../api/trainers.api.js';
 import AttendanceCheckIn from '../components/attendance/AttendanceCheckIn.jsx';
+import GymQrPanel from '../components/attendance/GymQrPanel.jsx';
 import DataTable from '../components/ui/DataTable.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -15,42 +17,47 @@ import { ROLES } from '../utils/roles.js';
 export default function AttendancePage() {
   const { user } = useAuth();
   const canScan = [ROLES.ADMIN, ROLES.TRAINER].includes(user.role);
+  const isAdmin = user.role === ROLES.ADMIN;
   const isTrainer = user.role === ROLES.TRAINER;
-  const [records, setRecords] = useState([]);
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [tab, setTab] = useState(canScan ? 'checkin' : 'history');
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const fetchRecords = useCallback((params) => attendanceApi.listAttendance(params), []);
+
+  const {
+    items: records,
+    meta,
+    page,
+    pageSize,
+    setPage,
+    setPageSize,
+    loading,
+    reload: reloadRecords,
+  } = usePaginatedList(fetchRecords);
+
+  const loadMembers = useCallback(async () => {
+    if (!canScan) return;
+    setMembersLoading(true);
     try {
-      const [data, memberList] = await Promise.all([
-        attendanceApi.listAttendance(),
-        canScan
-          ? isTrainer
-            ? trainersApi.getMyAssignedMembers()
-            : membersApi.listMembers()
-          : Promise.resolve([]),
-      ]);
-      setRecords(data);
-      if (canScan) setMembers(memberList);
+      const result = isTrainer
+        ? await trainersApi.getMyAssignedMembers({ page: 1, pageSize: 100 })
+        : await membersApi.listMembers({ page: 1, pageSize: 100 });
+      setMembers(result.items);
     } catch (err) {
       setError(getApiError(err));
     } finally {
-      setLoading(false);
+      setMembersLoading(false);
     }
   }, [canScan, isTrainer]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadMembers();
+  }, [loadMembers]);
 
-  const openRecords = useMemo(
-    () => records.filter((r) => !r.checkOutAt),
-    [records],
-  );
+  const openRecords = useMemo(() => records.filter((r) => !r.checkOutAt), [records]);
 
   const todayCount = useMemo(() => {
     const start = new Date();
@@ -65,7 +72,7 @@ export default function AttendancePage() {
       try {
         const record = await attendanceApi.checkIn(payload);
         const name = fullName(record.member?.user);
-        setRecords((prev) => [record, ...prev]);
+        await reloadRecords();
         setSuccess(`${name} checked in`);
         return { ok: true, name, record };
       } catch (err) {
@@ -78,24 +85,25 @@ export default function AttendancePage() {
         return { ok: false };
       }
     },
-    [],
+    [reloadRecords],
   );
 
-  const handleCheckOut = useCallback(async (id) => {
-    setError('');
-    setSuccess('');
-    try {
-      const updated = await attendanceApi.checkOut(id);
-      setRecords((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, ...updated, checkOutAt: updated.checkOutAt } : r)),
-      );
-      setSuccess(`${fullName(updated.member?.user)} checked out`);
-      return { ok: true };
-    } catch (err) {
-      setError(getApiError(err));
-      return { ok: false };
-    }
-  }, []);
+  const handleCheckOut = useCallback(
+    async (id) => {
+      setError('');
+      setSuccess('');
+      try {
+        const updated = await attendanceApi.checkOut(id);
+        await reloadRecords();
+        setSuccess(`${fullName(updated.member?.user)} checked out`);
+        return { ok: true };
+      } catch (err) {
+        setError(getApiError(err));
+        return { ok: false };
+      }
+    },
+    [reloadRecords],
+  );
 
   const onSelfCheckIn = async () => {
     await handleCheckIn({ method: 'MANUAL' });
@@ -132,7 +140,7 @@ export default function AttendancePage() {
     },
   ];
 
-  if (loading && records.length === 0) {
+  if (loading && records.length === 0 && membersLoading) {
     return <LoadingSpinner />;
   }
 
@@ -141,9 +149,7 @@ export default function AttendancePage() {
       <PageHeader
         title="Attendance"
         description={
-          canScan
-            ? 'Fast check-in: scan QR or tap a member name'
-            : 'Your gym visit history'
+          canScan ? 'Fast check-in: scan QR or tap a member name' : 'Your gym visit history'
         }
       />
 
@@ -164,9 +170,10 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          <div className="mb-6 flex gap-1 rounded-xl border border-slate-800 bg-slate-900/60 p-1">
+          <div className="mb-6 flex flex-wrap gap-1 rounded-xl border border-slate-800 bg-slate-900/60 p-1">
             {[
               { id: 'checkin', label: 'Check in' },
+              ...(isAdmin ? [{ id: 'gymqr', label: 'Gym QR' }] : []),
               { id: 'history', label: 'History' },
             ].map((t) => (
               <button
@@ -185,6 +192,8 @@ export default function AttendancePage() {
           </div>
         </>
       )}
+
+      {isAdmin && tab === 'gymqr' && <GymQrPanel />}
 
       {canScan && tab === 'checkin' && (
         <AttendanceCheckIn
@@ -205,23 +214,24 @@ export default function AttendancePage() {
 
       {user.role === ROLES.MEMBER && (
         <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="font-semibold text-white">Quick check-in</h2>
+          <h2 className="font-semibold text-white">Check in at the gym</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Show your QR to staff, or tap below if you have an active paid membership.
+            Scan the entrance QR poster with your phone camera. You will be signed in here if
+            needed, then your visit is recorded. You can also check in manually below.
           </p>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <Link
               to="/profile"
-              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg border border-teal-500/40 text-sm text-teal-400 hover:bg-teal-500/10"
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg border border-slate-600 text-sm text-slate-300 hover:bg-slate-800"
             >
-              My QR code
+              Desk QR (staff)
             </Link>
             <button
               type="button"
               onClick={onSelfCheckIn}
               className="min-h-[48px] flex-1 rounded-lg bg-teal-600 text-sm font-medium text-white hover:bg-teal-500"
             >
-              Check in now
+              Manual check-in
             </button>
           </div>
           {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
@@ -237,7 +247,19 @@ export default function AttendancePage() {
           {loading ? (
             <LoadingSpinner />
           ) : (
-            <DataTable columns={columns} data={records} emptyMessage="No attendance yet" />
+            <DataTable
+              columns={columns}
+              data={records}
+              emptyMessage="No attendance yet"
+              pagination={{
+                page,
+                pageSize,
+                total: meta.total,
+                totalPages: meta.totalPages,
+                onPageChange: setPage,
+                onPageSizeChange: setPageSize,
+              }}
+            />
           )}
         </>
       )}

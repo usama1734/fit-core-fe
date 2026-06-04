@@ -23,7 +23,8 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('fitcore_token');
       localStorage.removeItem('fitcore_user');
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${redirect}`;
       }
     }
     return Promise.reject(error);
@@ -35,4 +36,8 @@ export function getApiError(error) {
   if (data?.error?.message) return data.error.message;
   if (data?.message) return data.message;
   return error.message || 'Something went wrong';
+}
+
+export function getApiErrorCode(error) {
+  return error.response?.data?.error?.code ?? null;
 }

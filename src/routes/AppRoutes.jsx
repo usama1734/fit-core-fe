@@ -4,6 +4,7 @@ import AppLayout from '../layouts/AppLayout.jsx';
 import AttendancePage from '../pages/AttendancePage.jsx';
 import DashboardPage from '../pages/DashboardPage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
+import MemberCheckInPage from '../pages/MemberCheckInPage.jsx';
 import MembersPage from '../pages/MembersPage.jsx';
 import PaymentCancelPage from '../pages/PaymentCancelPage.jsx';
 import PaymentSuccessPage from '../pages/PaymentSuccessPage.jsx';
@@ -21,6 +22,7 @@ export default function AppRoutes() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/check-in" element={<MemberCheckInPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
@@ -42,7 +44,7 @@ export default function AppRoutes() {
                 }
               />
               <Route
-                path="trainers"
+                path="trainers/:trainerId?"
                 element={
                   <RoleGuard roles={[ROLES.ADMIN]}>
                     <TrainersPage />

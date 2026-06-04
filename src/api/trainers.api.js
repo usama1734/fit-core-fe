@@ -1,8 +1,9 @@
 import { apiClient } from './client.js';
+import { parseListResponse } from './pagination.js';
 
-export async function listTrainers() {
-  const { data } = await apiClient.get('/trainers');
-  return data.data;
+export async function listTrainers({ page = 1, pageSize = 10 } = {}) {
+  const { data } = await apiClient.get('/trainers', { params: { page, pageSize } });
+  return parseListResponse(data, { page, pageSize });
 }
 
 export async function getTrainer(id) {
@@ -20,14 +21,14 @@ export async function updateTrainer(id, payload) {
   return data.data;
 }
 
-export async function getTrainerMembers(id) {
-  const { data } = await apiClient.get(`/trainers/${id}/members`);
-  return data.data;
+export async function getTrainerMembers(id, { page = 1, pageSize = 10 } = {}) {
+  const { data } = await apiClient.get(`/trainers/${id}/members`, { params: { page, pageSize } });
+  return parseListResponse(data, { page, pageSize });
 }
 
-export async function getMyAssignedMembers() {
-  const { data } = await apiClient.get('/trainers/me/members');
-  return data.data;
+export async function getMyAssignedMembers({ page = 1, pageSize = 10 } = {}) {
+  const { data } = await apiClient.get('/trainers/me/members', { params: { page, pageSize } });
+  return parseListResponse(data, { page, pageSize });
 }
 
 export async function deleteTrainer(id) {

@@ -1,3 +1,7 @@
+import { useMemo, useState } from 'react';
+import { DEFAULT_PAGE_SIZE } from '../../api/pagination.js';
+import Pagination from './Pagination.jsx';
+
 export default function DataTable({
   columns,
   data,
@@ -5,7 +9,38 @@ export default function DataTable({
   emptyMessage = 'No records found',
   onRowClick,
   mobileRender,
+  pagination,
+  paginateLocally = false,
+  defaultPageSize = DEFAULT_PAGE_SIZE,
 }) {
+  const [localPage, setLocalPage] = useState(1);
+  const [localPageSize, setLocalPageSize] = useState(defaultPageSize);
+
+  const isServerPagination = Boolean(pagination?.onPageChange);
+  const isLocalPagination = paginateLocally && !isServerPagination;
+
+  const displayData = useMemo(() => {
+    if (!data?.length) return [];
+    if (isLocalPagination) {
+      const start = (localPage - 1) * localPageSize;
+      return data.slice(start, start + localPageSize);
+    }
+    if (isServerPagination) {
+      const { page, pageSize } = pagination;
+      if (data.length <= pageSize) return data;
+      const start = (page - 1) * pageSize;
+      return data.slice(start, start + pageSize);
+    }
+    return data;
+  }, [data, isServerPagination, isLocalPagination, localPage, localPageSize, pagination]);
+
+  const localMeta = useMemo(() => {
+    const total = data?.length ?? 0;
+    const pageSize = localPageSize;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    return { page: localPage, pageSize, total, totalPages };
+  }, [data, localPage, localPageSize]);
+
   if (!data?.length) {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-6 py-12 text-center text-slate-400">
@@ -14,9 +49,20 @@ export default function DataTable({
     );
   }
 
-  return (
+  const activeMeta = isServerPagination
+    ? {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+        totalPages: pagination.totalPages,
+      }
+    : isLocalPagination
+      ? localMeta
+      : null;
+
+  const tableBody = (
     <>
-      <div className="hidden overflow-x-auto rounded-xl border border-slate-800 md:block">
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="border-b border-slate-800 bg-slate-900/90 text-xs uppercase tracking-wide text-slate-400">
             <tr>
@@ -28,7 +74,7 @@ export default function DataTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/80">
-            {data.map((row) => (
+            {displayData.map((row) => (
               <tr
                 key={row[keyField]}
                 onClick={() => onRowClick?.(row)}
@@ -46,7 +92,7 @@ export default function DataTable({
       </div>
 
       <div className="space-y-3 md:hidden">
-        {data.map((row) =>
+        {displayData.map((row) =>
           mobileRender ? (
             mobileRender(row)
           ) : (
@@ -68,5 +114,35 @@ export default function DataTable({
         )}
       </div>
     </>
+  );
+
+  const paginationProps = isServerPagination
+    ? {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+        totalPages: pagination.totalPages,
+        onPageChange: pagination.onPageChange,
+        onPageSizeChange: pagination.onPageSizeChange,
+      }
+    : isLocalPagination
+      ? {
+          page: localMeta.page,
+          pageSize: localMeta.pageSize,
+          total: localMeta.total,
+          totalPages: localMeta.totalPages,
+          onPageChange: setLocalPage,
+          onPageSizeChange: (size) => {
+            setLocalPageSize(size);
+            setLocalPage(1);
+          },
+        }
+      : null;
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+      {tableBody}
+      {paginationProps && activeMeta.total > 0 && <Pagination {...paginationProps} />}
+    </div>
   );
 }

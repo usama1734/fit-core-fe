@@ -4,14 +4,23 @@
 
 @layer base {
   html {
-    @apply scroll-smooth;
+    @apply h-full scroll-smooth;
   }
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    @apply h-full overflow-hidden bg-slate-950 text-slate-100 antialiased;
+  }
+  #root {
+    @apply h-full min-h-0;
   }
 }
 
-/* QR scanner — single video feed, no duplicate tiles */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* QR scanner */
 .fitcore-qr-scanner {
   position: relative;
   width: 100%;
@@ -48,7 +57,6 @@
   border-radius: 0 !important;
 }
 
-/* html5-qrcode can leave a second video node on remount */
 .fitcore-qr-scanner video ~ video {
   display: none !important;
 }

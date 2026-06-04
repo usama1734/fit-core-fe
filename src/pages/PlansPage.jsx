@@ -19,6 +19,10 @@ export default function PlansPage() {
   const isAdmin = user.role === ROLES.ADMIN;
   const isMember = user.role === ROLES.MEMBER;
   const [plans, setPlans] = useState([]);
+  const [tablePlans, setTablePlans] = useState([]);
+  const [tablePage, setTablePage] = useState(1);
+  const [tablePageSize, setTablePageSize] = useState(10);
+  const [tableMeta, setTableMeta] = useState({ total: 0, totalPages: 1 });
   const [currentPlanId, setCurrentPlanId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,11 +34,11 @@ export default function PlansPage() {
     setLoading(true);
     setError('');
     try {
-      const [planList, profile] = await Promise.all([
-        plansApi.listPlans(),
+      const [planResult, profile] = await Promise.all([
+        plansApi.listPlans({ page: 1, pageSize: 100 }),
         isMember ? membersApi.getMyProfile().catch(() => null) : Promise.resolve(null),
       ]);
-      setPlans(planList);
+      setPlans(planResult.items);
       setCurrentPlanId(profile?.membershipPlanId ?? profile?.membershipPlan?.id ?? null);
     } catch (err) {
       setError(getApiError(err));
@@ -42,6 +46,24 @@ export default function PlansPage() {
       setLoading(false);
     }
   }, [isMember]);
+
+  const loadTable = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const tableResult = await plansApi.listPlans({
+        page: tablePage,
+        pageSize: tablePageSize,
+      });
+      setTablePlans(tableResult.items);
+      setTableMeta(tableResult.meta);
+    } catch (err) {
+      setError(getApiError(err));
+    }
+  }, [isAdmin, tablePage, tablePageSize]);
+
+  useEffect(() => {
+    loadTable();
+  }, [loadTable]);
 
   useEffect(() => {
     load();
@@ -56,7 +78,10 @@ export default function PlansPage() {
         price: Number(values.price),
         durationDays: Number(values.durationDays),
         features: values.features
-          ? values.features.split(',').map((s) => s.trim()).filter(Boolean)
+          ? values.features
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
           : [],
       };
       if (modal?.mode === 'edit') {
@@ -65,6 +90,7 @@ export default function PlansPage() {
         await plansApi.createPlan(payload);
       }
       await load();
+      await loadTable();
     } catch (err) {
       throw new Error(getApiError(err));
     } finally {
@@ -77,6 +103,7 @@ export default function PlansPage() {
     try {
       await plansApi.deletePlan(plan.id);
       await load();
+      await loadTable();
     } catch (err) {
       setError(getApiError(err));
     }
@@ -176,10 +203,25 @@ export default function PlansPage() {
         ))}
       </div>
 
-      {isAdmin && plans.length > 0 && (
+      {isAdmin && tableMeta.total > 0 && (
         <div className="mt-10">
           <h2 className="mb-4 text-lg font-semibold text-white">All plans (table)</h2>
-          <DataTable columns={adminColumns} data={plans} emptyMessage="No plans" />
+          <DataTable
+            columns={adminColumns}
+            data={tablePlans}
+            emptyMessage="No plans"
+            pagination={{
+              page: tablePage,
+              pageSize: tablePageSize,
+              total: tableMeta.total,
+              totalPages: tableMeta.totalPages,
+              onPageChange: setTablePage,
+              onPageSizeChange: (size) => {
+                setTablePageSize(size);
+                setTablePage(1);
+              },
+            }}
+          />
         </div>
       )}
 

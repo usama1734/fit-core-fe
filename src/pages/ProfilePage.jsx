@@ -70,14 +70,9 @@ export default function ProfilePage() {
 
     return (
       <div>
-        <PageHeader
-          title="My Profile"
-          description="Your trainer account and contact details"
-        />
+        <PageHeader title="My Profile" description="Your trainer account and contact details" />
 
-        {error && (
-          <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>
-        )}
+        {error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
 
         <div className="grid gap-6 lg:grid-cols-2">
           <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
@@ -229,10 +224,10 @@ export default function ProfilePage() {
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 lg:col-span-2">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">Attendance QR code</h2>
+              <h2 className="text-lg font-semibold text-white">Desk QR code (staff)</h2>
               <p className="mt-2 max-w-md text-sm text-slate-400">
-                Show this code at the front desk or to your trainer. They will scan it to record
-                your gym check-in.
+                For check-in at the entrance, scan the gym poster QR with your phone. Staff can scan
+                this personal code at the desk if the entrance QR is unavailable.
               </p>
               <button
                 type="button"
