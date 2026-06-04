@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import * as attendanceApi from '../../api/attendance.api.js';
-import { getApiError } from '../../api/client.js';
-import LoadingSpinner from '../ui/LoadingSpinner.jsx';
+import * as attendanceApi from '@api/attendance.api.js';
+import { getApiError } from '@api/client.js';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
 
 export default function GymQrPanel() {
   const [payload, setPayload] = useState(null);

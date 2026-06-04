@@ -1,15 +1,15 @@
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import * as paymentsApi from '../api/payments.api.js';
-import DataTable from '../components/ui/DataTable.jsx';
-import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { getApiError } from '../api/client.js';
-import { usePaginatedList } from '../hooks/usePaginatedList.js';
-import { formatCurrency, formatDate, fullName } from '../utils/format.js';
-import { formatMemberPaymentStatus, memberPaymentStatusClass } from '../utils/paymentStatus.js';
-import { ROLES } from '../utils/roles.js';
+import * as paymentsApi from '@api/payments.api.js';
+import DataTable from '@components/ui/DataTable.jsx';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { getApiError } from '@api/client.js';
+import { usePaginatedList } from '@hooks/usePaginatedList.js';
+import { formatCurrency, formatDate, fullName } from '@utils/format.js';
+import { formatMemberPaymentStatus, memberPaymentStatusClass } from '@utils/paymentStatus.js';
+import { ROLES } from '@utils/roles.js';
 
 const statusColors = {
   COMPLETED: 'text-teal-400',

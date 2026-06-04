@@ -1,4 +1,4 @@
-import { formatCurrency } from '../../utils/format.js';
+import { formatCurrency } from '@utils/format.js';
 
 export default function PlanCard({
   plan,

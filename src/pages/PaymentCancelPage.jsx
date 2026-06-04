@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import PageHeader from '../components/ui/PageHeader.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
 
 export default function PaymentCancelPage() {
   return (

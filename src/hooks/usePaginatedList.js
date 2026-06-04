@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getApiError } from '../api/client.js';
-import { DEFAULT_PAGE_SIZE } from '../api/pagination.js';
+import { getApiError } from '@api/client.js';
+import { DEFAULT_PAGE_SIZE } from '@api/pagination.js';
 
 export function usePaginatedList(fetchPage, deps = []) {
   const [page, setPage] = useState(1);

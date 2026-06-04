@@ -1,20 +1,20 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from '../contexts/AuthContext.jsx';
-import AppLayout from '../layouts/AppLayout.jsx';
-import AttendancePage from '../pages/AttendancePage.jsx';
-import DashboardPage from '../pages/DashboardPage.jsx';
-import LoginPage from '../pages/LoginPage.jsx';
-import MemberCheckInPage from '../pages/MemberCheckInPage.jsx';
-import MembersPage from '../pages/MembersPage.jsx';
-import PaymentCancelPage from '../pages/PaymentCancelPage.jsx';
-import PaymentSuccessPage from '../pages/PaymentSuccessPage.jsx';
-import PaymentsPage from '../pages/PaymentsPage.jsx';
-import PlansPage from '../pages/PlansPage.jsx';
-import ProfilePage from '../pages/ProfilePage.jsx';
-import TrainersPage from '../pages/TrainersPage.jsx';
-import { ROLES } from '../utils/roles.js';
-import ProtectedRoute from './ProtectedRoute.jsx';
-import RoleGuard from './RoleGuard.jsx';
+import { AuthProvider } from '@contexts/AuthContext.jsx';
+import AppLayout from '@layouts/AppLayout.jsx';
+import AttendancePage from '@pages/AttendancePage.jsx';
+import DashboardPage from '@pages/DashboardPage.jsx';
+import LoginPage from '@pages/LoginPage.jsx';
+import MemberCheckInPage from '@pages/MemberCheckInPage.jsx';
+import MembersPage from '@pages/MembersPage.jsx';
+import PaymentCancelPage from '@pages/PaymentCancelPage.jsx';
+import PaymentSuccessPage from '@pages/PaymentSuccessPage.jsx';
+import PaymentsPage from '@pages/PaymentsPage.jsx';
+import PlansPage from '@pages/PlansPage.jsx';
+import ProfilePage from '@pages/ProfilePage.jsx';
+import TrainersPage from '@pages/TrainersPage.jsx';
+import { ROLES } from '@utils/roles.js';
+import ProtectedRoute from '@routes/ProtectedRoute.jsx';
+import RoleGuard from '@routes/RoleGuard.jsx';
 
 export default function AppRoutes() {
   return (

@@ -1,4 +1,4 @@
-import { apiClient } from './client.js';
+import { apiClient } from '@api/client.js';
 
 export async function getAdminDashboard(params = {}) {
   const { data } = await apiClient.get('/dashboard/admin', { params });

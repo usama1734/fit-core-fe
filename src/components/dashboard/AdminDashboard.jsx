@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import * as dashboardApi from '../../api/dashboard.api.js';
-import { getApiError } from '../../api/client.js';
-import { formatCurrency } from '../../utils/format.js';
+import * as dashboardApi from '@api/dashboard.api.js';
+import { getApiError } from '@api/client.js';
+import { formatCurrency } from '@utils/format.js';
 import KpiStat from './KpiStat.jsx';
 import RecentPaymentsPanel from './RecentPaymentsPanel.jsx';
 import { IconActivity, IconAlert, IconCheck, IconCurrency, IconUsers } from './icons.jsx';
-import LoadingSpinner from '../ui/LoadingSpinner.jsx';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
 
 const RANGE_OPTIONS = [
   { days: 7, label: '7 days' },

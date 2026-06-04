@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { useAuth } from '@contexts/AuthContext.jsx';
 
 /** Legacy poster URLs; in-app check-in is on Attendance. */
 export default function MemberCheckInPage() {

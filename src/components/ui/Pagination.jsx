@@ -1,4 +1,4 @@
-import { PAGE_SIZE_OPTIONS } from '../../api/pagination.js';
+import { PAGE_SIZE_OPTIONS } from '@api/pagination.js';
 
 export default function Pagination({
   page,

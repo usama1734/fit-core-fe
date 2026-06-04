@@ -1,5 +1,5 @@
-import { apiClient } from './client.js';
-import { parseListResponse } from './pagination.js';
+import { apiClient } from '@api/client.js';
+import { parseListResponse } from '@api/pagination.js';
 
 export async function listAttendance({ page = 1, pageSize = 10, ...rest } = {}) {
   const { data } = await apiClient.get('/attendance', { params: { page, pageSize, ...rest } });

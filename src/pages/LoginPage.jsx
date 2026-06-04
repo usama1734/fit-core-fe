@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { getApiError } from '../api/client.js';
-import { getSafeRedirect } from '../utils/redirect.js';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { getApiError } from '@api/client.js';
+import { getSafeRedirect } from '@utils/redirect.js';
 
 export default function LoginPage() {
   const { user, login, loading: authLoading } = useAuth();

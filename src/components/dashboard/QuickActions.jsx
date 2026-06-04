@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ROLES } from '../../utils/roles.js';
+import { ROLES } from '@utils/roles.js';
 
 const actionsByRole = {
   [ROLES.ADMIN]: [

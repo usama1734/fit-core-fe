@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { formatCurrency, formatDate, fullName } from '../../utils/format.js';
+import { formatCurrency, formatDate, fullName } from '@utils/format.js';
 import ChartPanel from './ChartPanel.jsx';
 
 export default function RecentPaymentsPanel({ payments = [] }) {

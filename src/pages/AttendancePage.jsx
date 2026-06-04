@@ -1,15 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
-import { usePaginatedList } from '../hooks/usePaginatedList.js';
-import * as attendanceApi from '../api/attendance.api.js';
-import GymQrPanel from '../components/attendance/GymQrPanel.jsx';
-import MemberGymScanCheckIn from '../components/attendance/MemberGymScanCheckIn.jsx';
-import DataTable from '../components/ui/DataTable.jsx';
-import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { getApiError } from '../api/client.js';
-import { formatDate, fullName } from '../utils/format.js';
-import { ROLES } from '../utils/roles.js';
+import { usePaginatedList } from '@hooks/usePaginatedList.js';
+import * as attendanceApi from '@api/attendance.api.js';
+import GymQrPanel from '@components/attendance/GymQrPanel.jsx';
+import MemberGymScanCheckIn from '@components/attendance/MemberGymScanCheckIn.jsx';
+import DataTable from '@components/ui/DataTable.jsx';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { getApiError } from '@api/client.js';
+import { formatDate, fullName } from '@utils/format.js';
+import { ROLES } from '@utils/roles.js';
 
 export default function AttendancePage() {
   const { user } = useAuth();

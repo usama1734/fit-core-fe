@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { DEFAULT_PAGE_SIZE } from '../../api/pagination.js';
+import { DEFAULT_PAGE_SIZE } from '@api/pagination.js';
 import Pagination from './Pagination.jsx';
 
 export default function DataTable({

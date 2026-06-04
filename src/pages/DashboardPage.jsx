@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import * as dashboardApi from '../api/dashboard.api.js';
-import * as membersApi from '../api/members.api.js';
-import * as attendanceApi from '../api/attendance.api.js';
-import AdminDashboard from '../components/dashboard/AdminDashboard.jsx';
-import QuickActions from '../components/dashboard/QuickActions.jsx';
-import DashboardCard from '../components/ui/DashboardCard.jsx';
-import DataTable from '../components/ui/DataTable.jsx';
-import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { getApiError } from '../api/client.js';
-import { formatDate, formatDateShort, fullName } from '../utils/format.js';
-import { ROLES } from '../utils/roles.js';
+import * as dashboardApi from '@api/dashboard.api.js';
+import * as membersApi from '@api/members.api.js';
+import * as attendanceApi from '@api/attendance.api.js';
+import AdminDashboard from '@components/dashboard/AdminDashboard.jsx';
+import QuickActions from '@components/dashboard/QuickActions.jsx';
+import DashboardCard from '@components/ui/DashboardCard.jsx';
+import DataTable from '@components/ui/DataTable.jsx';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { getApiError } from '@api/client.js';
+import { formatDate, formatDateShort, fullName } from '@utils/format.js';
+import { ROLES } from '@utils/roles.js';
 
 function Panel({ title, children, action }) {
   return (

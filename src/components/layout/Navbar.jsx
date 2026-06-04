@@ -1,5 +1,5 @@
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { fullName } from '../../utils/format.js';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { fullName } from '@utils/format.js';
 
 export default function Navbar({ onMenuClick, title }) {
   const { user, logout } = useAuth();

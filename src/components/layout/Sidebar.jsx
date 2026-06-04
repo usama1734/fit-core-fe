@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { fullName } from '../../utils/format.js';
-import { ROLES } from '../../utils/roles.js';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { fullName } from '@utils/format.js';
+import { ROLES } from '@utils/roles.js';
 
 const navItems = [
   {

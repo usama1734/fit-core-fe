@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import * as authApi from '../api/auth.api.js';
-import * as membersApi from '../api/members.api.js';
-import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { getApiError } from '../api/client.js';
-import { formatDateShort, fullName } from '../utils/format.js';
+import * as authApi from '@api/auth.api.js';
+import * as membersApi from '@api/members.api.js';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { getApiError } from '@api/client.js';
+import { formatDateShort, fullName } from '@utils/format.js';
 import {
   formatMemberPaymentStatus,
   memberPaymentStatusClass,
   MEMBER_PAYMENT_STATUS,
-} from '../utils/paymentStatus.js';
-import { ROLES } from '../utils/roles.js';
+} from '@utils/paymentStatus.js';
+import { ROLES } from '@utils/roles.js';
 
 export default function ProfilePage() {
   const { user } = useAuth();

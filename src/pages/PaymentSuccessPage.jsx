@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import * as paymentsApi from '../api/payments.api.js';
-import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { getApiError } from '../api/client.js';
-import { formatDateShort } from '../utils/format.js';
-import { formatMemberPaymentStatus } from '../utils/paymentStatus.js';
+import * as paymentsApi from '@api/payments.api.js';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { getApiError } from '@api/client.js';
+import { formatDateShort } from '@utils/format.js';
+import { formatMemberPaymentStatus } from '@utils/paymentStatus.js';
 
 export default function PaymentSuccessPage() {
   const [params] = useSearchParams();

@@ -1,10 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import * as attendanceApi from '../../api/attendance.api.js';
-import { getApiError, getApiErrorCode } from '../../api/client.js';
-import { formatDate } from '../../utils/format.js';
-import { parseVenueQrScan } from '../../utils/qrScan.js';
-import QrScanner from '../qr/QrScanner.jsx';
+import * as attendanceApi from '@api/attendance.api.js';
+import { getApiError, getApiErrorCode } from '@api/client.js';
+import { formatDate } from '@utils/format.js';
+import { parseVenueQrScan } from '@utils/qrScan.js';
+import QrScanner from '@components/qr/QrScanner.jsx';
 
 export default function MemberGymScanCheckIn({ onCheckedIn }) {
   const [processing, setProcessing] = useState(false);

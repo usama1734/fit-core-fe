@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import * as trainersApi from '../api/trainers.api.js';
-import DataTable from '../components/ui/DataTable.jsx';
-import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
-import ModalForm from '../components/ui/ModalForm.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import { usePaginatedList } from '../hooks/usePaginatedList.js';
-import { getApiError } from '../api/client.js';
-import { fullName } from '../utils/format.js';
+import * as trainersApi from '@api/trainers.api.js';
+import DataTable from '@components/ui/DataTable.jsx';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import ModalForm from '@components/ui/ModalForm.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
+import { usePaginatedList } from '@hooks/usePaginatedList.js';
+import { getApiError } from '@api/client.js';
+import { fullName } from '@utils/format.js';
 
 export default function TrainersPage() {
   const { trainerId } = useParams();

@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePaginatedList } from '../hooks/usePaginatedList.js';
-import * as attendanceApi from '../api/attendance.api.js';
-import * as membersApi from '../api/members.api.js';
-import * as trainersApi from '../api/trainers.api.js';
-import * as plansApi from '../api/plans.api.js';
-import DataTable from '../components/ui/DataTable.jsx';
-import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
-import ModalForm from '../components/ui/ModalForm.jsx';
-import PageHeader from '../components/ui/PageHeader.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
-import { getApiError } from '../api/client.js';
-import { formatDate, formatDateShort, fullName } from '../utils/format.js';
-import { formatMemberPaymentStatus, memberPaymentStatusClass } from '../utils/paymentStatus.js';
-import { ROLES } from '../utils/roles.js';
+import { usePaginatedList } from '@hooks/usePaginatedList.js';
+import * as attendanceApi from '@api/attendance.api.js';
+import * as membersApi from '@api/members.api.js';
+import * as trainersApi from '@api/trainers.api.js';
+import * as plansApi from '@api/plans.api.js';
+import DataTable from '@components/ui/DataTable.jsx';
+import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import ModalForm from '@components/ui/ModalForm.jsx';
+import PageHeader from '@components/ui/PageHeader.jsx';
+import { useAuth } from '@contexts/AuthContext.jsx';
+import { getApiError } from '@api/client.js';
+import { formatDate, formatDateShort, fullName } from '@utils/format.js';
+import { formatMemberPaymentStatus, memberPaymentStatusClass } from '@utils/paymentStatus.js';
+import { ROLES } from '@utils/roles.js';
 
 export default function MembersPage() {
   const { user } = useAuth();
