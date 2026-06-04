@@ -1,50 +1,23 @@
 /**
- * Parse QR scan result for attendance desk flow.
- * @returns {{ kind: 'member' | 'venue' | null, token: string } | null}
+ * Parse gym entrance QR scan (raw FC-GYM-… token or legacy URL with ?k=).
  */
-export function parseAttendanceQrScan(raw) {
+export function parseVenueQrScan(raw) {
   const trimmed = raw?.trim();
   if (!trimmed) return null;
 
   if (/^https?:\/\//i.test(trimmed)) {
     try {
       const url = new URL(trimmed);
-      const t = url.searchParams.get('t') ?? url.searchParams.get('token');
-      if (t?.trim()) return { kind: 'member', token: t.trim() };
-
       const k = url.searchParams.get('k');
-      if (k?.trim()) {
-        if (k.trim().startsWith('FC-GYM-')) {
-          return { kind: 'venue', token: k.trim() };
-        }
-        return { kind: 'member', token: k.trim() };
-      }
+      if (k?.trim()) return k.trim();
     } catch {
       // fall through
     }
   }
 
   if (trimmed.startsWith('FC-GYM-')) {
-    return { kind: 'venue', token: trimmed };
+    return trimmed;
   }
 
-  if (trimmed.startsWith('FC-')) {
-    return { kind: 'member', token: trimmed };
-  }
-
-  return { kind: 'member', token: trimmed };
-}
-
-/** Extract gym venue token from a scanned QR (URL or FC-GYM-… raw token). */
-export function parseVenueQrScan(raw) {
-  const parsed = parseAttendanceQrScan(raw);
-  if (!parsed?.token) return null;
-  if (parsed.kind === 'venue') return parsed.token;
   return null;
-}
-
-export function buildMemberDeskQrValue(qrToken) {
-  if (!qrToken) return '';
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/desk-check-in?t=${encodeURIComponent(qrToken)}`;
 }

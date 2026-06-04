@@ -100,7 +100,7 @@ export default function ProfilePage() {
           <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 lg:col-span-2">
             <h2 className="text-lg font-semibold text-white">Quick links</h2>
             <p className="mt-2 text-sm text-slate-400">
-              Manage your assigned members and scan QR codes for check-in.
+              Manage your assigned members and view their attendance.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
@@ -113,7 +113,7 @@ export default function ProfilePage() {
                 to="/attendance"
                 className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
               >
-                Attendance scanner
+                Attendance history
               </Link>
             </div>
           </section>

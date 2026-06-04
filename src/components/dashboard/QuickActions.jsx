@@ -6,8 +6,8 @@ const actionsByRole = {
     { to: '/members', label: 'Add member', desc: 'Create or invite', icon: '👥', primary: true },
     {
       to: '/attendance',
-      label: 'Check-in desk',
-      desc: 'Scan or manual',
+      label: 'Gym QR',
+      desc: 'Print entrance poster',
       icon: '✅',
       primary: true,
     },
@@ -16,7 +16,7 @@ const actionsByRole = {
     { to: '/trainers', label: 'Trainers', desc: 'Staff roster', icon: '🏋️' },
   ],
   [ROLES.TRAINER]: [
-    { to: '/attendance', label: 'Check-in', desc: 'Scan member QR', icon: '✅', primary: true },
+    { to: '/attendance', label: 'Attendance', desc: 'Member visits', icon: '✅', primary: true },
     { to: '/members', label: 'My members', desc: 'Roster & visits', icon: '👥', primary: true },
     { to: '/profile', label: 'Profile', desc: 'Your account', icon: '👤' },
   ],

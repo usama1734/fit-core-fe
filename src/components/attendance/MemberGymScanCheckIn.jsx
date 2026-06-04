@@ -20,7 +20,7 @@ export default function MemberGymScanCheckIn({ onCheckedIn }) {
       setError('');
       setSuccess('');
       try {
-        const record = await attendanceApi.checkIn({ venueToken, method: 'QR' });
+        const record = await attendanceApi.checkIn({ venueToken });
         setSuccess('You are checked in!');
         setLastCheckInAt(record.checkInAt);
         onCheckedIn?.(record);

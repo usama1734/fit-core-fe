@@ -39,11 +39,6 @@ export async function assignPlan(id, membershipPlanId, membershipStart) {
   return data.data;
 }
 
-export async function regenerateQr(id) {
-  const { data } = await apiClient.post(`/members/${id}/qr`);
-  return data.data;
-}
-
 export async function deleteMember(id) {
   const { data } = await apiClient.delete(`/members/${id}`);
   return data.data;

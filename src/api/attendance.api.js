@@ -27,11 +27,17 @@ export async function deleteAttendance(id) {
 }
 
 export async function getGymCheckInQr() {
-  const { data } = await apiClient.get('/attendance/gym-qr');
+  const { data } = await apiClient.get('/gym/check-in-qr');
+  if (!data?.success) {
+    throw new Error(data?.error?.message ?? 'Failed to load gym QR');
+  }
   return data.data;
 }
 
 export async function regenerateGymCheckInQr() {
-  const { data } = await apiClient.post('/attendance/gym-qr/regenerate');
+  const { data } = await apiClient.post('/gym/check-in-qr/regenerate');
+  if (!data?.success) {
+    throw new Error(data?.error?.message ?? 'Failed to regenerate gym QR');
+  }
   return data.data;
 }
