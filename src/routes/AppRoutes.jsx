@@ -5,6 +5,7 @@ import AttendancePage from '../pages/AttendancePage.jsx';
 import DashboardPage from '../pages/DashboardPage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import MemberCheckInPage from '../pages/MemberCheckInPage.jsx';
+import MemberDeskQrPage from '../pages/MemberDeskQrPage.jsx';
 import MembersPage from '../pages/MembersPage.jsx';
 import PaymentCancelPage from '../pages/PaymentCancelPage.jsx';
 import PaymentSuccessPage from '../pages/PaymentSuccessPage.jsx';
@@ -23,6 +24,7 @@ export default function AppRoutes() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/check-in" element={<MemberCheckInPage />} />
+          <Route path="/desk-check-in" element={<MemberDeskQrPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />

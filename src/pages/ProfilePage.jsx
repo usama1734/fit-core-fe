@@ -14,6 +14,7 @@ import {
   MEMBER_PAYMENT_STATUS,
 } from '../utils/paymentStatus.js';
 import { ROLES } from '../utils/roles.js';
+import { buildMemberDeskQrValue } from '../utils/qrScan.js';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -149,6 +150,29 @@ export default function ProfilePage() {
 
       {error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
 
+      <section className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <div className="flex flex-col items-center text-center">
+          {profile?.qrToken ? (
+            <QrDisplay value={buildMemberDeskQrValue(profile.qrToken)} size={260} />
+          ) : (
+            <p className="text-sm text-slate-400">No QR token yet.</p>
+          )}
+          <h2 className="mt-6 text-lg font-semibold text-white">Desk QR code (staff)</h2>
+          <p className="mt-2 max-w-md text-sm text-slate-400">
+            Show this code at the front desk. For entrance check-in, scan the gym poster QR with
+            your phone instead.
+          </p>
+          <button
+            type="button"
+            onClick={handleRegenerateQr}
+            disabled={regenerating}
+            className="mt-4 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+          >
+            {regenerating ? 'Regenerating…' : 'Regenerate QR code'}
+          </button>
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
           <h2 className="mb-4 text-lg font-semibold text-white">Account</h2>
@@ -219,36 +243,6 @@ export default function ProfilePage() {
               No trainer assigned yet. Contact the gym admin to get matched with a trainer.
             </p>
           )}
-        </section>
-
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 lg:col-span-2">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Desk QR code (staff)</h2>
-              <p className="mt-2 max-w-md text-sm text-slate-400">
-                For check-in at the entrance, scan the gym poster QR with your phone. Staff can scan
-                this personal code at the desk if the entrance QR is unavailable.
-              </p>
-              <button
-                type="button"
-                onClick={handleRegenerateQr}
-                disabled={regenerating}
-                className="mt-4 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
-              >
-                {regenerating ? 'Regenerating…' : 'Regenerate QR code'}
-              </button>
-            </div>
-            <div className="flex flex-col items-center">
-              {profile?.qrToken ? (
-                <QrDisplay value={profile.qrToken} size={240} />
-              ) : (
-                <p className="text-sm text-slate-400">No QR token yet.</p>
-              )}
-              <p className="mt-3 max-w-xs break-all text-center text-xs text-slate-500">
-                {profile?.qrToken}
-              </p>
-            </div>
-          </div>
         </section>
       </div>
     </div>

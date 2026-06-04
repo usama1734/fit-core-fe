@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import QrScanner from '../qr/QrScanner.jsx';
 import { fullName } from '../../utils/format.js';
+import { parseAttendanceQrScan } from '../../utils/qrScan.js';
 
 export default function AttendanceCheckIn({
   members,
@@ -64,7 +65,18 @@ export default function AttendanceCheckIn({
   const onQrScan = useCallback(
     async (decoded) => {
       if (scanLockRef.current || processing || !decoded?.trim()) return;
-      const token = decoded.trim();
+
+      const parsed = parseAttendanceQrScan(decoded);
+      if (!parsed?.token) return;
+
+      if (parsed.kind === 'venue') {
+        const msg =
+          'That is the gym entrance QR. Use the member’s desk QR from their Profile page.';
+        onScanError?.(msg);
+        return;
+      }
+
+      const token = parsed.token;
       if (token === lastTokenRef.current) return;
 
       scanLockRef.current = true;
@@ -77,7 +89,7 @@ export default function AttendanceCheckIn({
         lastTokenRef.current = '';
       }, 1000);
     },
-    [processing, runCheckIn],
+    [processing, runCheckIn, onScanError],
   );
 
   const onMemberTap = async (member) => {
@@ -96,6 +108,26 @@ export default function AttendanceCheckIn({
 
   return (
     <div className="space-y-5">
+      {mode === 'scan' && (
+        <section className="w-full">
+          <div className="relative mx-auto w-full max-w-xl">
+            <QrScanner
+              active={mode === 'scan' && !processing}
+              onScan={onQrScan}
+              onError={(msg) => onScanError?.(msg)}
+            />
+            {processing && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/60">
+                <p className="text-sm font-medium text-white">Checking in…</p>
+              </div>
+            )}
+          </div>
+          <p className="mt-3 text-center text-sm text-slate-400">
+            Scan the member&apos;s desk QR from their Profile (not the gym entrance poster).
+          </p>
+        </section>
+      )}
+
       {/* Mode switch */}
       <div className="flex gap-1 rounded-xl border border-slate-800 bg-slate-900/60 p-1">
         {[
@@ -165,27 +197,6 @@ export default function AttendanceCheckIn({
               </button>
             ))}
           </div>
-        </section>
-      )}
-
-      {mode === 'scan' && (
-        <section className="w-full">
-          <div className="relative mx-auto w-full max-w-xl">
-            <QrScanner
-              active={mode === 'scan' && !processing}
-              onScan={onQrScan}
-              onError={(msg) => onScanError?.(msg)}
-            />
-            {processing && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/60">
-                <p className="text-sm font-medium text-white">Checking in…</p>
-              </div>
-            )}
-          </div>
-          <p className="mt-3 text-center text-xs text-slate-500 sm:text-left">
-            Hold the member&apos;s QR from their profile in the frame. Scanning continues
-            automatically after each check-in.
-          </p>
         </section>
       )}
 

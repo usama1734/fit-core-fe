@@ -71,7 +71,7 @@ export default function GymQrPanel() {
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
       {payload?.qrCodeDataUrl && (
-        <div className="mt-6 flex flex-col items-center gap-4 md:flex-row md:items-start">
+        <div className="mt-6 flex flex-col items-center gap-6">
           <img
             src={payload.qrCodeDataUrl}
             alt="Gym check-in QR code"
@@ -79,7 +79,7 @@ export default function GymQrPanel() {
             height={320}
             className="rounded-xl bg-white p-3 shadow-lg"
           />
-          <div className="w-full max-w-md flex-1 space-y-3">
+          <div className="w-full max-w-md space-y-3">
             <label className="block text-xs text-slate-500">Check-in URL</label>
             <p className="break-all rounded-lg border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-300">
               {payload.url}
