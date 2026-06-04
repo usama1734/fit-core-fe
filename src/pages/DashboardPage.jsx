@@ -5,6 +5,7 @@ import * as membersApi from '@api/members.api.js';
 import * as attendanceApi from '@api/attendance.api.js';
 import AdminDashboard from '@components/dashboard/AdminDashboard.jsx';
 import QuickActions from '@components/dashboard/QuickActions.jsx';
+import MembershipReminderBanner from '@components/membership/MembershipReminderBanner.jsx';
 import DashboardCard from '@components/ui/DashboardCard.jsx';
 import DataTable from '@components/ui/DataTable.jsx';
 import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
+  const [memberProfile, setMemberProfile] = useState(null);
   const [trainerMembers, setTrainerMembers] = useState([]);
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function DashboardPage() {
           const profile = await membersApi.getMyProfile();
           const attendanceResult = await attendanceApi.listAttendance({ page: 1, pageSize: 1 });
           if (!cancelled) {
+            setMemberProfile(profile);
             setStats({
               plan: profile.membershipPlan?.name ?? 'None',
               trainer: profile.trainer?.user ? fullName(profile.trainer.user) : 'Unassigned',
@@ -164,6 +167,8 @@ export default function DashboardPage() {
       <PageHeader title="My dashboard" description="Membership, trainer, and visit summary" />
 
       <QuickActions role={user.role} />
+
+      <MembershipReminderBanner member={memberProfile} />
 
       {stats.openVisit && (
         <div className="rounded-2xl border border-teal-500/30 bg-teal-500/10 p-4">

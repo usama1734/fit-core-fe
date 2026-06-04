@@ -16,6 +16,11 @@ export async function getMyProfile() {
   return data.data;
 }
 
+export async function updateMyProfile(payload) {
+  const { data } = await apiClient.patch('/members/me', payload);
+  return data.data;
+}
+
 export async function createMember(payload) {
   const { data } = await apiClient.post('/members', payload);
   return data.data;

@@ -12,7 +12,7 @@ const actionsByRole = {
       primary: true,
     },
     { to: '/plans', label: 'Plans', desc: 'Manage pricing', icon: '📋' },
-    { to: '/payments', label: 'Payments', desc: 'View history', icon: '💳' },
+    { to: '/payments', label: 'Payments', desc: 'History & manual', icon: '💳' },
     { to: '/trainers', label: 'Trainers', desc: 'Staff roster', icon: '🏋️' },
   ],
   [ROLES.TRAINER]: [

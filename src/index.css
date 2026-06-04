@@ -66,3 +66,26 @@
 .fitcore-qr-scanner img {
   display: none !important;
 }
+
+@media print {
+  body {
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .gym-qr-panel,
+  .gym-qr-panel * {
+    visibility: visible;
+  }
+  .gym-qr-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    background: white !important;
+  }
+}

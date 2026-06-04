@@ -10,6 +10,7 @@ import ModalForm from '@components/ui/ModalForm.jsx';
 import PageHeader from '@components/ui/PageHeader.jsx';
 import { useAuth } from '@contexts/AuthContext.jsx';
 import { getApiError } from '@api/client.js';
+import { exportToCsv } from '@utils/csvExport.js';
 import { formatDate, formatDateShort, fullName } from '@utils/format.js';
 import { formatMemberPaymentStatus, memberPaymentStatusClass } from '@utils/paymentStatus.js';
 import { ROLES } from '@utils/roles.js';
@@ -132,10 +133,51 @@ export default function MembersPage() {
   const handleAssignPlan = async (values) => {
     setSaving(true);
     try {
-      await membersApi.assignPlan(modal.memberId, values.membershipPlanId);
+      const start = values.membershipStart
+        ? new Date(values.membershipStart).toISOString()
+        : undefined;
+      await membersApi.assignPlan(modal.memberId, values.membershipPlanId, start);
       await load();
     } catch (err) {
       throw new Error(getApiError(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditMember = async (values) => {
+    setSaving(true);
+    try {
+      const payload = {
+        firstName: values.firstName.trim(),
+        lastName: values.lastName.trim(),
+        phone: values.phone?.trim() || null,
+        isActive: values.isActive === 'true' || values.isActive === true,
+      };
+      await membersApi.updateMember(modal.member.id, payload);
+      await load();
+    } catch (err) {
+      throw new Error(getApiError(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeactivateMember = async () => {
+    if (
+      !window.confirm(
+        `Deactivate ${fullName(modal.member?.user)}? They will not be able to log in.`,
+      )
+    ) {
+      return;
+    }
+    setSaving(true);
+    try {
+      await membersApi.deleteMember(modal.member.id);
+      setModal(null);
+      await load();
+    } catch (err) {
+      setListError(getApiError(err));
     } finally {
       setSaving(false);
     }
@@ -229,6 +271,20 @@ export default function MembersPage() {
                 >
                   Plan
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setModal({ type: 'edit', member: r })}
+                  className="rounded px-2 py-1 text-xs text-slate-300 hover:bg-slate-700/50"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModal({ type: 'deactivate', member: r })}
+                  className="rounded px-2 py-1 text-xs text-red-400 hover:bg-red-500/10"
+                >
+                  Deactivate
+                </button>
               </div>
             ),
           },
@@ -241,6 +297,25 @@ export default function MembersPage() {
         (a, b) => new Date(b.checkInAt) - new Date(a.checkInAt),
       )
     : [];
+
+  const handleExportCsv = async () => {
+    setListError('');
+    try {
+      const result = isTrainer
+        ? await trainersApi.getMyAssignedMembers({ page: 1, pageSize: 100 })
+        : await membersApi.listMembers({ page: 1, pageSize: 100 });
+      exportToCsv('members-export', result.items, [
+        { label: 'Name', value: (r) => fullName(r.user) },
+        { label: 'Email', value: (r) => r.user?.email ?? '' },
+        { label: 'Trainer', value: (r) => (r.trainer?.user ? fullName(r.trainer.user) : '') },
+        { label: 'Plan', value: (r) => r.membershipPlan?.name ?? '' },
+        { label: 'Payment status', value: (r) => r.paymentStatus ?? '' },
+        { label: 'Expires', value: (r) => r.membershipEnd ?? '' },
+      ]);
+    } catch (err) {
+      setListError(getApiError(err));
+    }
+  };
 
   const displayError = listError || auxError;
   if ((loading || auxLoading) && members.length === 0) return <LoadingSpinner />;
@@ -256,13 +331,24 @@ export default function MembersPage() {
         }
         actions={
           (isAdmin || isTrainer) && (
-            <button
-              type="button"
-              onClick={() => setModal({ type: isTrainer ? 'invite' : 'create' })}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
-            >
-              {isTrainer ? '+ Invite Member' : '+ Create Member'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleExportCsv}
+                  className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                >
+                  Export CSV
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setModal({ type: isTrainer ? 'invite' : 'create' })}
+                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+              >
+                {isTrainer ? '+ Invite Member' : '+ Create Member'}
+              </button>
+            </div>
           )
         }
       />
@@ -384,9 +470,81 @@ export default function MembersPage() {
             required: true,
             options: planOptions,
           },
+          {
+            name: 'membershipStart',
+            label: 'Membership start',
+            type: 'date',
+            hint: 'Optional. Defaults to today if omitted.',
+          },
         ]}
         onSubmit={handleAssignPlan}
       />
+
+      <ModalForm
+        open={modal?.type === 'edit'}
+        onClose={() => setModal(null)}
+        title="Edit Member"
+        loading={saving}
+        initialValues={
+          modal?.member
+            ? {
+                firstName: modal.member.user?.firstName ?? '',
+                lastName: modal.member.user?.lastName ?? '',
+                phone: modal.member.phone ?? '',
+                isActive: String(modal.member.user?.isActive !== false),
+              }
+            : {}
+        }
+        fields={[
+          { name: 'firstName', label: 'First name', required: true },
+          { name: 'lastName', label: 'Last name', required: true },
+          { name: 'phone', label: 'Phone' },
+          {
+            name: 'isActive',
+            label: 'Account active',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'true', label: 'Active' },
+              { value: 'false', label: 'Inactive' },
+            ],
+          },
+        ]}
+        onSubmit={handleEditMember}
+      />
+
+      {modal?.type === 'deactivate' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setModal(null)}
+            aria-hidden
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-white">Deactivate member</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Deactivate {fullName(modal.member?.user)}? They will not be able to log in.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setModal(null)}
+                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeactivateMember}
+                disabled={saving}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {saving ? 'Deactivating…' : 'Deactivate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

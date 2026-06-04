@@ -100,16 +100,35 @@ export default function PaymentSuccessPage() {
         </div>
       )}
 
+      {!loading && !error && (
+        <p className="mb-6 text-sm text-slate-400">
+          What&apos;s next? Visit the gym and scan the entrance QR on the Attendance page to check
+          in.
+        </p>
+      )}
+
       <div className="mt-6 flex flex-wrap justify-center gap-3">
+        {!loading && !error && (
+          <Link
+            to="/attendance"
+            className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+          >
+            Go to check-in
+          </Link>
+        )}
         <Link
           to="/profile"
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+          className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
         >
           View profile
         </Link>
         <Link
           to="/plans"
-          className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          className={`rounded-lg px-4 py-2 text-sm ${
+            !loading && !error
+              ? 'border border-slate-600 text-slate-200 hover:bg-slate-800'
+              : 'bg-teal-600 font-medium text-white hover:bg-teal-500'
+          }`}
         >
           Membership plans
         </Link>

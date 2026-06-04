@@ -69,10 +69,14 @@ export default function GymQrPanel() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+    <div className="gym-qr-panel rounded-xl border border-slate-800 bg-slate-900/60 p-6 print:border-0 print:bg-white print:p-8">
       <h2 className="text-lg font-semibold text-white">Gym entrance QR</h2>
       <p className="mt-2 max-w-xl text-sm text-slate-400">
         Print this poster and place it at the gym entrance. Members open the FitCore app, go to
@@ -99,16 +103,35 @@ export default function GymQrPanel() {
             alt="Gym check-in QR code"
             width={320}
             height={320}
-            className="rounded-xl bg-white p-3 shadow-lg"
+            className="gym-qr-print-target rounded-xl bg-white p-3 shadow-lg print:shadow-none"
           />
-          <button
-            type="button"
-            onClick={handleRegenerate}
-            disabled={regenerating}
-            className="min-h-[44px] rounded-lg border border-amber-500/40 px-4 text-sm text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
-          >
-            {regenerating ? 'Regenerating…' : 'Regenerate QR'}
-          </button>
+          <p className="hidden text-center text-lg font-semibold text-slate-900 print:block">
+            Scan to check in — FitCore Gym
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 print:hidden">
+            <a
+              href={qrImage}
+              download="fitcore-gym-check-in-qr.png"
+              className="min-h-[44px] rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+            >
+              Download PNG
+            </a>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="min-h-[44px] rounded-lg border border-slate-600 px-4 text-sm text-slate-200 hover:bg-slate-800"
+            >
+              Print poster
+            </button>
+            <button
+              type="button"
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="min-h-[44px] rounded-lg border border-amber-500/40 px-4 text-sm text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
+            >
+              {regenerating ? 'Regenerating…' : 'Regenerate QR'}
+            </button>
+          </div>
         </div>
       )}
 

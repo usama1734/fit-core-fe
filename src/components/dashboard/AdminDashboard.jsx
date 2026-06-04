@@ -5,8 +5,10 @@ import { getApiError } from '@api/client.js';
 import { formatCurrency } from '@utils/format.js';
 import KpiStat from './KpiStat.jsx';
 import RecentPaymentsPanel from './RecentPaymentsPanel.jsx';
+import QuickActions from './QuickActions.jsx';
 import { IconActivity, IconAlert, IconCheck, IconCurrency, IconUsers } from './icons.jsx';
 import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import { ROLES } from '@utils/roles.js';
 
 const RANGE_OPTIONS = [
   { days: 7, label: '7 days' },
@@ -19,7 +21,6 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
-
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -89,6 +90,8 @@ export default function AdminDashboard() {
           </Link>
         </div>
       )}
+
+      <QuickActions role={ROLES.ADMIN} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiStat

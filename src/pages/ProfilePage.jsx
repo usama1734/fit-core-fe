@@ -3,7 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import * as authApi from '@api/auth.api.js';
 import * as membersApi from '@api/members.api.js';
 import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import ModalForm from '@components/ui/ModalForm.jsx';
 import PageHeader from '@components/ui/PageHeader.jsx';
+import MembershipReminderBanner from '@components/membership/MembershipReminderBanner.jsx';
 import { useAuth } from '@contexts/AuthContext.jsx';
 import { getApiError } from '@api/client.js';
 import { formatDateShort, fullName } from '@utils/format.js';
@@ -15,12 +17,14 @@ import {
 import { ROLES } from '@utils/roles.js';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const location = useLocation();
   const isTrainer = user.role === ROLES.TRAINER;
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,13 +126,62 @@ export default function ProfilePage() {
     );
   }
 
+  const handleUpdateProfile = async (values) => {
+    setSaving(true);
+    try {
+      const updated = await membersApi.updateMyProfile({
+        firstName: values.firstName.trim(),
+        lastName: values.lastName.trim(),
+        phone: values.phone?.trim() || null,
+      });
+      setProfile(updated);
+      await refreshUser();
+    } catch (err) {
+      throw new Error(getApiError(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const trainer = profile?.trainer;
 
   return (
     <div>
-      <PageHeader title="My Profile" description="Membership details and trainer" />
+      <PageHeader
+        title="My Profile"
+        description="Membership details and trainer"
+        actions={
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          >
+            Edit profile
+          </button>
+        }
+      />
+
+      <MembershipReminderBanner member={profile} />
 
       {error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
+
+      <ModalForm
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit profile"
+        loading={saving}
+        initialValues={{
+          firstName: profile?.user?.firstName ?? user.firstName ?? '',
+          lastName: profile?.user?.lastName ?? user.lastName ?? '',
+          phone: profile?.phone ?? '',
+        }}
+        fields={[
+          { name: 'firstName', label: 'First name', required: true },
+          { name: 'lastName', label: 'Last name', required: true },
+          { name: 'phone', label: 'Phone' },
+        ]}
+        onSubmit={handleUpdateProfile}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">

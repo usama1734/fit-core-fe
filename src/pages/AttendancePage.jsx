@@ -5,9 +5,11 @@ import GymQrPanel from '@components/attendance/GymQrPanel.jsx';
 import MemberGymScanCheckIn from '@components/attendance/MemberGymScanCheckIn.jsx';
 import DataTable from '@components/ui/DataTable.jsx';
 import LoadingSpinner from '@components/ui/LoadingSpinner.jsx';
+import ModalForm from '@components/ui/ModalForm.jsx';
 import PageHeader from '@components/ui/PageHeader.jsx';
 import { useAuth } from '@contexts/AuthContext.jsx';
 import { getApiError } from '@api/client.js';
+import { exportToCsv } from '@utils/csvExport.js';
 import { formatDate, fullName } from '@utils/format.js';
 import { ROLES } from '@utils/roles.js';
 
@@ -20,6 +22,8 @@ export default function AttendancePage() {
   const [tab, setTab] = useState(isAdmin ? 'gymqr' : 'history');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [editModal, setEditModal] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const fetchRecords = useCallback((params) => attendanceApi.listAttendance(params), []);
 
@@ -41,6 +45,53 @@ export default function AttendancePage() {
     start.setHours(0, 0, 0, 0);
     return records.filter((r) => new Date(r.checkInAt) >= start).length;
   }, [records]);
+
+  const toDatetimeLocal = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const handleEditAttendance = async (values) => {
+    setSaving(true);
+    try {
+      const payload = {
+        notes: values.notes?.trim() || null,
+      };
+      if (values.checkOutAt) {
+        payload.checkOutAt = new Date(values.checkOutAt).toISOString();
+      } else if (values.checkOutAt === '') {
+        payload.checkOutAt = null;
+      }
+      await attendanceApi.updateAttendance(editModal.record.id, payload);
+      setEditModal(null);
+      await reloadRecords();
+      setSuccess('Attendance record updated');
+    } catch (err) {
+      throw new Error(getApiError(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAttendance = async (record) => {
+    if (
+      !window.confirm(
+        `Delete attendance for ${fullName(record.member?.user)} on ${formatDate(record.checkInAt)}?`,
+      )
+    ) {
+      return;
+    }
+    setError('');
+    try {
+      await attendanceApi.deleteAttendance(record.id);
+      await reloadRecords();
+      setSuccess('Attendance record deleted');
+    } catch (err) {
+      setError(getApiError(err));
+    }
+  };
 
   const handleCheckOut = useCallback(
     async (id) => {
@@ -99,22 +150,59 @@ export default function AttendancePage() {
     {
       key: 'actions',
       label: '',
-      render: (r) =>
-        !r.checkOutAt ? (
-          <button
-            type="button"
-            onClick={() => handleCheckOut(r.id)}
-            className="min-h-[44px] text-sm font-medium text-teal-400 hover:underline"
-          >
-            Check out
-          </button>
-        ) : (
-          <span className="text-slate-500">Done</span>
-        ),
+      render: (r) => (
+        <div className="flex flex-wrap gap-2">
+          {!r.checkOutAt ? (
+            <button
+              type="button"
+              onClick={() => handleCheckOut(r.id)}
+              className="min-h-[44px] text-sm font-medium text-teal-400 hover:underline"
+            >
+              Check out
+            </button>
+          ) : (
+            <span className="text-slate-500">Done</span>
+          )}
+          {isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => setEditModal({ record: r })}
+                className="text-sm text-slate-300 hover:underline"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteAttendance(r)}
+                className="text-sm text-red-400 hover:underline"
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      ),
     },
   ];
 
   const columns = isMember ? memberColumns : staffColumns;
+
+  const handleExportCsv = async () => {
+    setError('');
+    try {
+      const result = await attendanceApi.listAttendance({ page: 1, pageSize: 100 });
+      exportToCsv('attendance-export', result.items, [
+        { label: 'Member', value: (r) => fullName(r.member?.user) },
+        { label: 'Method', value: (r) => r.method },
+        { label: 'Check in', value: (r) => r.checkInAt },
+        { label: 'Check out', value: (r) => r.checkOutAt ?? '' },
+        { label: 'Notes', value: (r) => r.notes ?? '' },
+      ]);
+    } catch (err) {
+      setError(getApiError(err));
+    }
+  };
 
   if (loading && records.length === 0) {
     return <LoadingSpinner />;
@@ -130,6 +218,17 @@ export default function AttendancePage() {
             : isAdmin
               ? 'Print the gym QR and view visit history'
               : 'View member visits and check out when they leave'
+        }
+        actions={
+          isAdmin && tab === 'history' ? (
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="min-h-[44px] rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+            >
+              Export CSV
+            </button>
+          ) : null
         }
       />
 
@@ -218,6 +317,31 @@ export default function AttendancePage() {
           )}
         </>
       )}
+
+      <ModalForm
+        open={!!editModal}
+        onClose={() => setEditModal(null)}
+        title="Edit attendance"
+        loading={saving}
+        initialValues={
+          editModal?.record
+            ? {
+                checkOutAt: toDatetimeLocal(editModal.record.checkOutAt),
+                notes: editModal.record.notes ?? '',
+              }
+            : {}
+        }
+        fields={[
+          {
+            name: 'checkOutAt',
+            label: 'Check out time',
+            type: 'datetime-local',
+            hint: 'Leave empty to clear check-out (open visit).',
+          },
+          { name: 'notes', label: 'Notes', type: 'textarea' },
+        ]}
+        onSubmit={handleEditAttendance}
+      />
     </div>
   );
 }
