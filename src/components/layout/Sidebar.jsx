@@ -9,7 +9,13 @@ const navItems = [
   { to: '/trainers', label: 'Trainers', icon: '🏋️', roles: [ROLES.ADMIN] },
   { to: '/plans', label: 'Plans', icon: '📋', roles: [ROLES.ADMIN, ROLES.MEMBER] },
   { to: '/attendance', label: 'Attendance', icon: '✅', roles: [ROLES.ADMIN, ROLES.TRAINER, ROLES.MEMBER] },
-  { to: '/payments', label: 'Payments', icon: '💳', roles: [ROLES.ADMIN, ROLES.MEMBER] },
+  {
+    to: '/payments',
+    label: 'Payments',
+    icon: '💳',
+    roles: [ROLES.ADMIN, ROLES.MEMBER],
+    adminLabel: 'Payment history',
+  },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -56,7 +62,7 @@ export default function Sidebar({ open, onClose }) {
               <span className="text-lg" aria-hidden>
                 {item.icon}
               </span>
-              {item.label}
+              {user?.role === ROLES.ADMIN && item.adminLabel ? item.adminLabel : item.label}
             </NavLink>
           ))}
         </nav>

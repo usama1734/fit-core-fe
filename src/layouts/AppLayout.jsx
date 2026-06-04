@@ -11,6 +11,8 @@ const titles = {
   '/plans': 'Membership Plans',
   '/attendance': 'Attendance',
   '/payments': 'Payments',
+  '/payment/success': 'Payment successful',
+  '/payment/cancel': 'Payment cancelled',
 };
 
 export default function AppLayout() {

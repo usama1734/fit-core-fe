@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as attendanceApi from '../api/attendance.api.js';
 import * as membersApi from '../api/members.api.js';
 import * as trainersApi from '../api/trainers.api.js';
-import QrScanner from '../components/qr/QrScanner.jsx';
+import AttendanceCheckIn from '../components/attendance/AttendanceCheckIn.jsx';
 import DataTable from '../components/ui/DataTable.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -21,23 +21,21 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [tab, setTab] = useState(canScan ? 'scanner' : 'history');
-  const [manualMemberId, setManualMemberId] = useState('');
-  const [scanning, setScanning] = useState(true);
-  const scanLockRef = useRef(false);
+  const [tab, setTab] = useState(canScan ? 'checkin' : 'history');
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError('');
     try {
-      const data = await attendanceApi.listAttendance();
+      const [data, memberList] = await Promise.all([
+        attendanceApi.listAttendance(),
+        canScan
+          ? isTrainer
+            ? trainersApi.getMyAssignedMembers()
+            : membersApi.listMembers()
+          : Promise.resolve([]),
+      ]);
       setRecords(data);
-      if (canScan) {
-        const m = isTrainer
-          ? await trainersApi.getMyAssignedMembers()
-          : await membersApi.listMembers();
-        setMembers(m);
-      }
+      if (canScan) setMembers(memberList);
     } catch (err) {
       setError(getApiError(err));
     } finally {
@@ -49,53 +47,58 @@ export default function AttendancePage() {
     load();
   }, [load]);
 
-  const handleCheckIn = useCallback(async (payload) => {
+  const openRecords = useMemo(
+    () => records.filter((r) => !r.checkOutAt),
+    [records],
+  );
+
+  const todayCount = useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return records.filter((r) => new Date(r.checkInAt) >= start).length;
+  }, [records]);
+
+  const handleCheckIn = useCallback(
+    async (payload) => {
+      setError('');
+      setSuccess('');
+      try {
+        const record = await attendanceApi.checkIn(payload);
+        const name = fullName(record.member?.user);
+        setRecords((prev) => [record, ...prev]);
+        setSuccess(`${name} checked in`);
+        return { ok: true, name, record };
+      } catch (err) {
+        const msg = getApiError(err);
+        if (msg.toLowerCase().includes('already checked in')) {
+          setError(`${msg} — use "Check out" above if they are leaving.`);
+        } else {
+          setError(msg);
+        }
+        return { ok: false };
+      }
+    },
+    [],
+  );
+
+  const handleCheckOut = useCallback(async (id) => {
     setError('');
     setSuccess('');
     try {
-      await attendanceApi.checkIn(payload);
-      setSuccess('Check-in recorded');
-      await load();
+      const updated = await attendanceApi.checkOut(id);
+      setRecords((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, ...updated, checkOutAt: updated.checkOutAt } : r)),
+      );
+      setSuccess(`${fullName(updated.member?.user)} checked out`);
+      return { ok: true };
     } catch (err) {
       setError(getApiError(err));
+      return { ok: false };
     }
-  }, [load]);
-
-  const onQrScan = useCallback(
-    async (decoded) => {
-      if (scanLockRef.current) return;
-      scanLockRef.current = true;
-      setScanning(false);
-      try {
-        await handleCheckIn({ qrToken: decoded, method: 'QR' });
-      } finally {
-        window.setTimeout(() => {
-          scanLockRef.current = false;
-          setScanning(true);
-        }, 2500);
-      }
-    },
-    [handleCheckIn],
-  );
-
-  const onManualCheckIn = async () => {
-    if (!manualMemberId) return;
-    await handleCheckIn({ memberId: manualMemberId, method: 'MANUAL' });
-    setManualMemberId('');
-  };
+  }, []);
 
   const onSelfCheckIn = async () => {
     await handleCheckIn({ method: 'MANUAL' });
-  };
-
-  const handleCheckOut = async (id) => {
-    try {
-      await attendanceApi.checkOut(id);
-      setSuccess('Checked out');
-      await load();
-    } catch (err) {
-      setError(getApiError(err));
-    }
   };
 
   const columns = [
@@ -119,115 +122,125 @@ export default function AttendancePage() {
           <button
             type="button"
             onClick={() => handleCheckOut(r.id)}
-            className="text-xs text-teal-400 hover:underline"
+            className="min-h-[44px] text-sm font-medium text-teal-400 hover:underline"
           >
             Check out
           </button>
         ) : (
-          '—'
+          <span className="text-slate-500">Done</span>
         ),
     },
   ];
 
-  const showScanner = canScan && tab === 'scanner';
+  if (loading && records.length === 0) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <div>
+    <div className="w-full max-w-5xl mx-auto">
       <PageHeader
         title="Attendance"
-        description="QR check-in and attendance history"
+        description={
+          canScan
+            ? 'Fast check-in: scan QR or tap a member name'
+            : 'Your gym visit history'
+        }
       />
 
       {canScan && (
-        <div className="mb-6 flex gap-2 border-b border-slate-800">
-          {['scanner', 'history'].map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium capitalize ${
-                tab === t
-                  ? 'border-b-2 border-teal-500 text-teal-400'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs text-slate-500">In gym now</p>
+              <p className="text-2xl font-bold text-amber-400">{openRecords.length}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <p className="text-xs text-slate-500">Check-ins today</p>
+              <p className="text-2xl font-bold text-teal-400">{todayCount}</p>
+            </div>
+            <div className="col-span-2 rounded-xl border border-slate-800 bg-slate-900/60 p-4 sm:col-span-1">
+              <p className="text-xs text-slate-500">Members</p>
+              <p className="text-2xl font-bold text-white">{members.length}</p>
+            </div>
+          </div>
+
+          <div className="mb-6 flex gap-1 rounded-xl border border-slate-800 bg-slate-900/60 p-1">
+            {[
+              { id: 'checkin', label: 'Check in' },
+              { id: 'history', label: 'History' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`min-h-[44px] flex-1 rounded-lg px-4 text-sm font-medium sm:flex-none sm:px-6 ${
+                  tab === t.id
+                    ? 'bg-teal-600 text-white'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
-      {error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>}
-      {success && (
-        <p className="mb-4 rounded-lg bg-teal-500/10 p-3 text-sm text-teal-400">{success}</p>
+      {canScan && tab === 'checkin' && (
+        <AttendanceCheckIn
+          members={members}
+          openRecords={openRecords}
+          onCheckIn={handleCheckIn}
+          onCheckOut={handleCheckOut}
+          error={error}
+          success={success}
+          onClearMessages={() => {
+            setError('');
+            setSuccess('');
+          }}
+          onResumeScanner={() => setError('')}
+          onScanError={(msg) => setError(msg)}
+        />
       )}
 
       {user.role === ROLES.MEMBER && (
         <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="text-sm font-semibold text-white">Member check-in</h2>
+          <h2 className="font-semibold text-white">Quick check-in</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Show your QR code from your profile for staff to scan, or check in directly from the app.
+            Show your QR to staff, or tap below if you have an active paid membership.
           </p>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <Link
               to="/profile"
-              className="rounded-lg border border-teal-500/40 px-4 py-2 text-sm text-teal-400 hover:bg-teal-500/10"
+              className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-lg border border-teal-500/40 text-sm text-teal-400 hover:bg-teal-500/10"
             >
-              View my QR code
+              My QR code
             </Link>
             <button
               type="button"
               onClick={onSelfCheckIn}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+              className="min-h-[48px] flex-1 rounded-lg bg-teal-600 text-sm font-medium text-white hover:bg-teal-500"
             >
               Check in now
             </button>
           </div>
+          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+          {success && <p className="mt-3 text-sm text-teal-400">{success}</p>}
         </div>
       )}
 
-      {showScanner && (
-        <div className="mb-8 grid gap-6 lg:grid-cols-2">
-          <div>
-            <h2 className="mb-3 text-sm font-semibold text-slate-300">QR Scanner</h2>
-            {scanning ? (
-              <QrScanner
-                active={scanning}
-                onScan={onQrScan}
-                onError={(msg) => setError(msg)}
-              />
-            ) : (
-              <p className="text-sm text-slate-400">Processing scan…</p>
-            )}
-          </div>
-          <div>
-            <h2 className="mb-3 text-sm font-semibold text-slate-300">Manual check-in</h2>
-            <select
-              value={manualMemberId}
-              onChange={(e) => setManualMemberId(e.target.value)}
-              className="mb-3 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white"
-            >
-              <option value="">Select member…</option>
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {fullName(m.user)}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={onManualCheckIn}
-              disabled={!manualMemberId}
-              className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-600 disabled:opacity-50"
-            >
-              Manual check-in
-            </button>
-          </div>
-        </div>
+      {(!canScan || tab === 'history') && (
+        <>
+          <h2 className="mb-4 text-lg font-semibold text-white">
+            {canScan ? 'Attendance history' : 'Your visits'}
+          </h2>
+          {loading ? (
+            <LoadingSpinner />
+          ) : (
+            <DataTable columns={columns} data={records} emptyMessage="No attendance yet" />
+          )}
+        </>
       )}
-
-      <h2 className="mb-4 text-lg font-semibold text-white">History</h2>
-      {loading ? <LoadingSpinner /> : <DataTable columns={columns} data={records} />}
     </div>
   );
 }

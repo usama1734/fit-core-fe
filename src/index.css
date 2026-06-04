@@ -11,8 +11,50 @@
   }
 }
 
-#fitcore-qr-region video {
-  border-radius: 0.75rem;
+/* QR scanner — single video feed, no duplicate tiles */
+.fitcore-qr-scanner {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-height: 220px;
+  background: #000;
+}
+
+@media (min-width: 640px) {
+  .fitcore-qr-scanner {
+    min-height: 280px;
+    max-width: 480px;
+  }
+}
+
+.fitcore-qr-scanner__region {
   width: 100% !important;
-  object-fit: cover;
+  min-height: 280px;
+}
+
+.fitcore-qr-scanner__region > div {
+  width: 100% !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.fitcore-qr-scanner video {
+  display: block !important;
+  width: 100% !important;
+  max-height: 360px !important;
+  height: auto !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+}
+
+/* html5-qrcode can leave a second video node on remount */
+.fitcore-qr-scanner video ~ video {
+  display: none !important;
+}
+
+.fitcore-qr-scanner #html5-qrcode-anchor-scan-type-change,
+.fitcore-qr-scanner #html5-qrcode-button-camera-permission,
+.fitcore-qr-scanner img {
+  display: none !important;
 }

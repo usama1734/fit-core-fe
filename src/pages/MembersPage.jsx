@@ -10,6 +10,10 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getApiError } from '../api/client.js';
 import { formatDate, formatDateShort, fullName } from '../utils/format.js';
+import {
+  formatMemberPaymentStatus,
+  memberPaymentStatusClass,
+} from '../utils/paymentStatus.js';
 import { ROLES } from '../utils/roles.js';
 
 export default function MembersPage() {
@@ -147,6 +151,15 @@ export default function MembersPage() {
       key: 'plan',
       label: 'Plan',
       render: (r) => r.membershipPlan?.name ?? '—',
+    },
+    {
+      key: 'paymentStatus',
+      label: 'Payment',
+      render: (r) => (
+        <span className={memberPaymentStatusClass(r.paymentStatus)}>
+          {formatMemberPaymentStatus(r.paymentStatus)}
+        </span>
+      ),
     },
     {
       key: 'end',

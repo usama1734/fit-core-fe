@@ -17,7 +17,9 @@ export default function Navbar({ onMenuClick, title }) {
             <path strokeLinecap="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        {title && <h1 className="truncate text-lg font-semibold text-white lg:hidden">{title}</h1>}
+        {title && (
+          <h1 className="truncate text-base font-semibold text-white sm:text-lg">{title}</h1>
+        )}
       </div>
       <div className="flex items-center gap-3">
         <div className="hidden text-right sm:block">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import * as authApi from '../api/auth.api.js';
 import * as membersApi from '../api/members.api.js';
 import QrDisplay from '../components/qr/QrDisplay.jsx';
@@ -8,10 +8,16 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getApiError } from '../api/client.js';
 import { formatDateShort, fullName } from '../utils/format.js';
+import {
+  formatMemberPaymentStatus,
+  memberPaymentStatusClass,
+  MEMBER_PAYMENT_STATUS,
+} from '../utils/paymentStatus.js';
 import { ROLES } from '../utils/roles.js';
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const location = useLocation();
   const isTrainer = user.role === ROLES.TRAINER;
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +44,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, location.key]);
 
   const handleRegenerateQr = async () => {
     if (!profile?.id) return;
@@ -167,6 +173,12 @@ export default function ProfilePage() {
               </div>
             )}
             <div>
+              <dt className="text-slate-500">Payment status</dt>
+              <dd className={memberPaymentStatusClass(profile?.paymentStatus)}>
+                {formatMemberPaymentStatus(profile?.paymentStatus)}
+              </dd>
+            </div>
+            <div>
               <dt className="text-slate-500">Current plan</dt>
               <dd className="text-slate-200">{profile?.membershipPlan?.name ?? 'None'}</dd>
             </div>
@@ -175,11 +187,18 @@ export default function ProfilePage() {
               <dd className="text-slate-200">{formatDateShort(profile?.membershipEnd)}</dd>
             </div>
           </dl>
+          {profile?.paymentStatus === MEMBER_PAYMENT_STATUS.UNPAID && (
+            <p className="mt-4 text-sm text-amber-400/90">
+              Complete payment to activate check-in at the gym.
+            </p>
+          )}
           <Link
             to="/plans"
-            className="mt-6 inline-block rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+            className="mt-6 inline-flex min-h-[44px] items-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
           >
-            Browse plans & pay
+            {profile?.paymentStatus === MEMBER_PAYMENT_STATUS.PAID
+              ? 'Browse plans & upgrade'
+              : 'Browse plans & pay'}
           </Link>
         </section>
 

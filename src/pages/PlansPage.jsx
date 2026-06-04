@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import * as membersApi from '../api/members.api.js';
 import * as paymentsApi from '../api/payments.api.js';
 import * as plansApi from '../api/plans.api.js';
@@ -14,6 +15,7 @@ import { ROLES } from '../utils/roles.js';
 
 export default function PlansPage() {
   const { user } = useAuth();
+  const location = useLocation();
   const isAdmin = user.role === ROLES.ADMIN;
   const isMember = user.role === ROLES.MEMBER;
   const [plans, setPlans] = useState([]);
@@ -43,7 +45,7 @@ export default function PlansPage() {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, location.key]);
 
   const handleSubmit = async (values) => {
     setSaving(true);

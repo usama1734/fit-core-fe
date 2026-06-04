@@ -5,11 +5,18 @@ export async function listPayments() {
   return data.data;
 }
 
-export async function createCheckout(planId, memberId) {
-  const { data } = await apiClient.post('/payments/checkout', {
-    planId,
-    ...(memberId && { memberId }),
-  });
+export async function createCheckout(planId) {
+  const { data } = await apiClient.post('/payments/checkout', { planId });
+  return data.data;
+}
+
+export async function confirmCheckout(sessionId) {
+  const { data } = await apiClient.post('/payments/confirm', { sessionId });
+  return data.data;
+}
+
+export async function syncPayments() {
+  const { data } = await apiClient.post('/payments/sync');
   return data.data;
 }
 

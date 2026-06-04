@@ -11,7 +11,7 @@ export default function PlanCard({
 }) {
   return (
     <article
-      className={`flex flex-col rounded-2xl border bg-slate-900/60 p-6 transition hover:border-teal-500/40 ${
+      className={`flex h-full flex-col rounded-2xl border bg-slate-900/60 p-5 transition hover:border-teal-500/40 sm:p-6 ${
         isCurrent ? 'border-teal-500 ring-1 ring-teal-500/30' : 'border-slate-800'
       }`}
     >

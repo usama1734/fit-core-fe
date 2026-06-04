@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import * as membersApi from '../api/members.api.js';
+import { Link } from 'react-router-dom';
 import * as paymentsApi from '../api/payments.api.js';
-import * as plansApi from '../api/plans.api.js';
 import DataTable from '../components/ui/DataTable.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getApiError } from '../api/client.js';
 import { formatCurrency, formatDate, fullName } from '../utils/format.js';
+import {
+  formatMemberPaymentStatus,
+  memberPaymentStatusClass,
+} from '../utils/paymentStatus.js';
 import { ROLES } from '../utils/roles.js';
 
 const statusColors = {
@@ -17,150 +20,147 @@ const statusColors = {
   REFUNDED: 'text-slate-400',
 };
 
+const statusHints = {
+  PENDING: 'Checkout started — finish payment on Stripe or sync below',
+  COMPLETED: 'Paid and membership activated',
+  FAILED: 'Checkout cancelled or expired — not charged',
+  REFUNDED: 'Refunded',
+};
+
 export default function PaymentsPage() {
   const { user } = useAuth();
   const isAdmin = user.role === ROLES.ADMIN;
+  const isMember = user.role === ROLES.MEMBER;
   const [payments, setPayments] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [checkoutPlanId, setCheckoutPlanId] = useState('');
-  const [checkoutMemberId, setCheckoutMemberId] = useState('');
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [p, pl, m] = await Promise.all([
-        paymentsApi.listPayments(),
-        plansApi.listPlans(),
-        isAdmin ? membersApi.listMembers() : Promise.resolve([]),
-      ]);
+      const p = await paymentsApi.listPayments();
       setPayments(p);
-      setPlans(pl.filter((x) => x.isActive));
-      setMembers(m);
     } catch (err) {
       setError(getApiError(err));
     } finally {
       setLoading(false);
     }
-  }, [isAdmin]);
+  }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const handleCheckout = async () => {
-    if (!checkoutPlanId) return;
-    if (isAdmin && !checkoutMemberId) {
-      setError('Select a member to charge.');
-      return;
-    }
-    setCheckoutLoading(true);
+  const handleSync = async () => {
+    setSyncing(true);
     setError('');
     try {
-      const session = await paymentsApi.createCheckout(
-        checkoutPlanId,
-        isAdmin ? checkoutMemberId : undefined,
-      );
-      if (session.url) {
-        window.location.href = session.url;
-      } else {
-        setError('No checkout URL returned. Configure Stripe on the server.');
-      }
+      const p = await paymentsApi.syncPayments();
+      setPayments(p);
     } catch (err) {
       setError(getApiError(err));
     } finally {
-      setCheckoutLoading(false);
+      setSyncing(false);
     }
   };
 
+  const pendingCount = payments.filter((p) => p.status === 'PENDING').length;
+
   const columns = [
-    {
-      key: 'member',
-      label: 'Member',
-      render: (r) => fullName(r.member?.user),
-    },
+    ...(isAdmin
+      ? [
+          {
+            key: 'member',
+            label: 'Member',
+            render: (r) => fullName(r.member?.user),
+          },
+          {
+            key: 'memberPayment',
+            label: 'Member status',
+            render: (r) => (
+              <span className={memberPaymentStatusClass(r.member?.paymentStatus)}>
+                {formatMemberPaymentStatus(r.member?.paymentStatus)}
+              </span>
+            ),
+          },
+        ]
+      : []),
     { key: 'plan', label: 'Plan', render: (r) => r.membershipPlan?.name ?? '—' },
     { key: 'amount', label: 'Amount', render: (r) => formatCurrency(r.amount) },
     {
       key: 'status',
-      label: 'Status',
+      label: 'Payment',
       render: (r) => (
-        <span className={statusColors[r.status] ?? 'text-slate-400'}>{r.status}</span>
+        <div>
+          <span className={statusColors[r.status] ?? 'text-slate-400'}>{r.status}</span>
+          {isMember && statusHints[r.status] && (
+            <p className="mt-0.5 text-xs text-slate-500">{statusHints[r.status]}</p>
+          )}
+        </div>
       ),
     },
     { key: 'paidAt', label: 'Paid', render: (r) => formatDate(r.paidAt) },
     { key: 'created', label: 'Created', render: (r) => formatDate(r.createdAt) },
   ];
 
-  const canCheckout = user.role === ROLES.MEMBER || user.role === ROLES.ADMIN;
-
   return (
-    <div>
-      <PageHeader title="Payments" description="Payment history and Stripe checkout" />
-
-      {canCheckout && plans.length > 0 && (
-        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-white">Stripe Checkout</h2>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            {isAdmin && (
-              <div className="flex-1">
-                <label className="mb-1 block text-xs text-slate-400">Member</label>
-                <select
-                  value={checkoutMemberId}
-                  onChange={(e) => setCheckoutMemberId(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white"
+    <div className="w-full max-w-full">
+      <PageHeader
+        title={isAdmin ? 'Payment history' : 'My payments'}
+        description={
+          isAdmin
+            ? 'View all member Stripe payments (admins cannot process payments)'
+            : 'Your payment history and membership purchases'
+        }
+        actions={
+          isMember && (
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              {pendingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleSync}
+                  disabled={syncing}
+                  className="min-h-[44px] rounded-lg border border-amber-500/50 px-4 py-2 text-sm text-amber-400 hover:bg-amber-500/10 disabled:opacity-50"
                 >
-                  <option value="">Choose a member…</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {fullName(m.user)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div className="flex-1">
-              <label className="mb-1 block text-xs text-slate-400">Select plan</label>
-              <select
-                value={checkoutPlanId}
-                onChange={(e) => setCheckoutPlanId(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white"
+                  {syncing ? 'Syncing…' : 'Sync with Stripe'}
+                </button>
+              )}
+              <Link
+                to="/plans"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-teal-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-teal-500"
               >
-                <option value="">Choose a plan…</option>
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — {formatCurrency(p.price)}
-                  </option>
-                ))}
-              </select>
+                Buy or upgrade plan
+              </Link>
             </div>
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={
-                !checkoutPlanId ||
-                checkoutLoading ||
-                (isAdmin && !checkoutMemberId)
-              }
-              className="rounded-lg bg-teal-600 px-6 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
-            >
-              {checkoutLoading ? 'Redirecting…' : 'Pay with Stripe'}
-            </button>
-          </div>
+          )
+        }
+      />
+
+      {isMember && pendingCount > 0 && (
+        <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200/90">
+          <p className="font-medium text-amber-300">
+            {pendingCount} pending checkout{pendingCount > 1 ? 's' : ''}
+          </p>
+          <p className="mt-1 text-slate-300">
+            <strong>PENDING</strong> means you clicked Subscribe and we created a Stripe
+            checkout, but payment was not confirmed in FitCore yet. Common causes: closing the
+            tab before paying, cancelling checkout, or the success page failing to activate your
+            plan. If you already paid, click <strong>Sync with Stripe</strong> — paid sessions
+            will move to <strong>COMPLETED</strong> and your plan will update.
+          </p>
         </div>
       )}
 
-      {error && <p className="mb-4 text-red-400">{error}</p>}
+      {error && (
+        <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>
+      )}
 
-      <h2 className="mb-4 text-lg font-semibold text-white">Payment History</h2>
       {loading ? (
         <LoadingSpinner />
       ) : (
-        <DataTable columns={columns} data={payments} emptyMessage="No payments" />
+        <DataTable columns={columns} data={payments} emptyMessage="No payments yet" />
       )}
     </div>
   );
