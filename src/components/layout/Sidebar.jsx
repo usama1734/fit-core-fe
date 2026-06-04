@@ -68,7 +68,6 @@ export default function Sidebar({ open, onClose }) {
         </nav>
         <div className="border-t border-slate-800 p-4">
           <p className="truncate text-xs text-slate-500">{user?.email}</p>
-          <p className="text-xs font-medium text-teal-500/90">{user?.role}</p>
         </div>
       </aside>
     </>

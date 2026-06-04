@@ -22,10 +22,9 @@ export default function Navbar({ onMenuClick, title }) {
         )}
       </div>
       <div className="flex items-center gap-3">
-        <div className="hidden text-right sm:block">
-          <p className="text-sm font-medium text-white">{fullName(user)}</p>
-          <p className="text-xs text-slate-500">{user?.role}</p>
-        </div>
+        <p className="hidden truncate text-sm font-medium text-white sm:block">
+          {fullName(user)}
+        </p>
         <button
           type="button"
           onClick={logout}
