@@ -5,6 +5,7 @@ import Sidebar from '../components/layout/Sidebar.jsx';
 
 const titles = {
   '/dashboard': 'Dashboard',
+  '/profile': 'My Profile',
   '/members': 'Members',
   '/trainers': 'Trainers',
   '/plans': 'Membership Plans',

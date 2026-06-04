@@ -187,12 +187,20 @@ export default function DashboardPage() {
           />
         </div>
 
-        <Link
-          to="/attendance"
-          className="mt-6 inline-block rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
-        >
-          Scan member QR codes
-        </Link>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            to="/profile"
+            className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+          >
+            My profile
+          </Link>
+          <Link
+            to="/attendance"
+            className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+          >
+            Scan member QR codes
+          </Link>
+        </div>
       </div>
     );
   }

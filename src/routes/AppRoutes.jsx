@@ -28,7 +28,7 @@ export default function AppRoutes() {
               <Route
                 path="profile"
                 element={
-                  <RoleGuard roles={[ROLES.MEMBER]}>
+                  <RoleGuard roles={[ROLES.MEMBER, ROLES.TRAINER]}>
                     <ProfilePage />
                   </RoleGuard>
                 }
@@ -49,9 +49,23 @@ export default function AppRoutes() {
                   </RoleGuard>
                 }
               />
-              <Route path="plans" element={<PlansPage />} />
+              <Route
+                path="plans"
+                element={
+                  <RoleGuard roles={[ROLES.ADMIN, ROLES.MEMBER]}>
+                    <PlansPage />
+                  </RoleGuard>
+                }
+              />
               <Route path="attendance" element={<AttendancePage />} />
-              <Route path="payments" element={<PaymentsPage />} />
+              <Route
+                path="payments"
+                element={
+                  <RoleGuard roles={[ROLES.ADMIN, ROLES.MEMBER]}>
+                    <PaymentsPage />
+                  </RoleGuard>
+                }
+              />
               <Route path="payment/success" element={<PaymentSuccessPage />} />
               <Route path="payment/cancel" element={<PaymentCancelPage />} />
             </Route>

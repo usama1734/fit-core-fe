@@ -15,13 +15,13 @@ export default function ModalForm({
   const [values, setValues] = useState(initialValues);
   const [error, setError] = useState('');
 
-  // Reset only when the modal opens — not on every render (default `{}` is unstable).
+  // Reset when the modal opens (stable EMPTY_INITIAL_VALUES for create forms).
   useEffect(() => {
     if (open) {
       setValues(initialValues);
       setError('');
     }
-  }, [open]);
+  }, [open, initialValues]);
 
   if (!open) return null;
 

@@ -4,12 +4,12 @@ import { ROLES } from '../../utils/roles.js';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: '📊', roles: [ROLES.ADMIN, ROLES.TRAINER, ROLES.MEMBER] },
-  { to: '/profile', label: 'My Profile', icon: '👤', roles: [ROLES.MEMBER] },
+  { to: '/profile', label: 'My Profile', icon: '👤', roles: [ROLES.MEMBER, ROLES.TRAINER] },
   { to: '/members', label: 'Members', icon: '👥', roles: [ROLES.ADMIN, ROLES.TRAINER] },
   { to: '/trainers', label: 'Trainers', icon: '🏋️', roles: [ROLES.ADMIN] },
-  { to: '/plans', label: 'Plans', icon: '📋', roles: [ROLES.ADMIN, ROLES.TRAINER, ROLES.MEMBER] },
+  { to: '/plans', label: 'Plans', icon: '📋', roles: [ROLES.ADMIN, ROLES.MEMBER] },
   { to: '/attendance', label: 'Attendance', icon: '✅', roles: [ROLES.ADMIN, ROLES.TRAINER, ROLES.MEMBER] },
-  { to: '/payments', label: 'Payments', icon: '💳', roles: [ROLES.ADMIN, ROLES.TRAINER, ROLES.MEMBER] },
+  { to: '/payments', label: 'Payments', icon: '💳', roles: [ROLES.ADMIN, ROLES.MEMBER] },
 ];
 
 export default function Sidebar({ open, onClose }) {

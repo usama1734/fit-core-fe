@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as attendanceApi from '../api/attendance.api.js';
 import * as membersApi from '../api/members.api.js';
+import * as trainersApi from '../api/trainers.api.js';
 import QrScanner from '../components/qr/QrScanner.jsx';
 import DataTable from '../components/ui/DataTable.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
@@ -14,6 +15,7 @@ import { ROLES } from '../utils/roles.js';
 export default function AttendancePage() {
   const { user } = useAuth();
   const canScan = [ROLES.ADMIN, ROLES.TRAINER].includes(user.role);
+  const isTrainer = user.role === ROLES.TRAINER;
   const [records, setRecords] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +24,7 @@ export default function AttendancePage() {
   const [tab, setTab] = useState(canScan ? 'scanner' : 'history');
   const [manualMemberId, setManualMemberId] = useState('');
   const [scanning, setScanning] = useState(true);
+  const scanLockRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,7 +33,9 @@ export default function AttendancePage() {
       const data = await attendanceApi.listAttendance();
       setRecords(data);
       if (canScan) {
-        const m = await membersApi.listMembers();
+        const m = isTrainer
+          ? await trainersApi.getMyAssignedMembers()
+          : await membersApi.listMembers();
         setMembers(m);
       }
     } catch (err) {
@@ -38,13 +43,13 @@ export default function AttendancePage() {
     } finally {
       setLoading(false);
     }
-  }, [canScan]);
+  }, [canScan, isTrainer]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const handleCheckIn = async (payload) => {
+  const handleCheckIn = useCallback(async (payload) => {
     setError('');
     setSuccess('');
     try {
@@ -54,13 +59,24 @@ export default function AttendancePage() {
     } catch (err) {
       setError(getApiError(err));
     }
-  };
+  }, [load]);
 
-  const onQrScan = async (decoded) => {
-    setScanning(false);
-    await handleCheckIn({ qrToken: decoded, method: 'QR' });
-    setTimeout(() => setScanning(true), 2000);
-  };
+  const onQrScan = useCallback(
+    async (decoded) => {
+      if (scanLockRef.current) return;
+      scanLockRef.current = true;
+      setScanning(false);
+      try {
+        await handleCheckIn({ qrToken: decoded, method: 'QR' });
+      } finally {
+        window.setTimeout(() => {
+          scanLockRef.current = false;
+          setScanning(true);
+        }, 2500);
+      }
+    },
+    [handleCheckIn],
+  );
 
   const onManualCheckIn = async () => {
     if (!manualMemberId) return;
@@ -112,6 +128,8 @@ export default function AttendancePage() {
         ),
     },
   ];
+
+  const showScanner = canScan && tab === 'scanner';
 
   return (
     <div>
@@ -168,7 +186,7 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {canScan && tab === 'scanner' && (
+      {showScanner && (
         <div className="mb-8 grid gap-6 lg:grid-cols-2">
           <div>
             <h2 className="mb-3 text-sm font-semibold text-slate-300">QR Scanner</h2>

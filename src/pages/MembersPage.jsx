@@ -81,15 +81,18 @@ export default function MembersPage() {
   const handleCreate = async (values) => {
     setSaving(true);
     try {
-      await membersApi.createMember({
-        email: values.email,
+      const payload = {
+        email: values.email.trim(),
         password: values.password,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        phone: values.phone || undefined,
-        trainerId: values.trainerId || undefined,
-        membershipPlanId: values.membershipPlanId || undefined,
-      });
+        firstName: values.firstName.trim(),
+        lastName: values.lastName.trim(),
+        phone: values.phone?.trim() || undefined,
+      };
+      if (isAdmin) {
+        payload.trainerId = values.trainerId || undefined;
+        payload.membershipPlanId = values.membershipPlanId || undefined;
+      }
+      await membersApi.createMember(payload);
       await load();
     } catch (err) {
       throw new Error(getApiError(err));
@@ -226,13 +229,13 @@ export default function MembersPage() {
             : 'Create and manage gym members'
         }
         actions={
-          isAdmin && (
+          (isAdmin || isTrainer) && (
             <button
               type="button"
-              onClick={() => setModal({ type: 'create' })}
+              onClick={() => setModal({ type: isTrainer ? 'invite' : 'create' })}
               className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
             >
-              + Create Member
+              {isTrainer ? '+ Invite Member' : '+ Create Member'}
             </button>
           )
         }
@@ -286,19 +289,30 @@ export default function MembersPage() {
       )}
 
       <ModalForm
-        open={modal?.type === 'create'}
+        open={modal?.type === 'create' || modal?.type === 'invite'}
         onClose={() => setModal(null)}
-        title="Create Member"
+        title={modal?.type === 'invite' ? 'Invite Member' : 'Create Member'}
         loading={saving}
-        submitLabel="Create"
+        submitLabel={modal?.type === 'invite' ? 'Invite' : 'Create'}
         fields={[
           { name: 'firstName', label: 'First name', required: true },
           { name: 'lastName', label: 'Last name', required: true },
           { name: 'email', label: 'Email', type: 'email', required: true },
-          { name: 'password', label: 'Password', type: 'password', required: true, min: 8 },
+          {
+            name: 'password',
+            label: 'Temporary password',
+            type: 'password',
+            required: true,
+            min: 8,
+            hint: 'At least 8 characters. Share this with the member for their first login.',
+          },
           { name: 'phone', label: 'Phone' },
-          { name: 'trainerId', label: 'Trainer', type: 'select', options: trainerOptions },
-          { name: 'membershipPlanId', label: 'Plan', type: 'select', options: planOptions },
+          ...(modal?.type === 'create'
+            ? [
+                { name: 'trainerId', label: 'Trainer', type: 'select', options: trainerOptions },
+                { name: 'membershipPlanId', label: 'Plan', type: 'select', options: planOptions },
+              ]
+            : []),
         ]}
         onSubmit={handleCreate}
       />

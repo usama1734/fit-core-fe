@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import * as authApi from '../api/auth.api.js';
 import * as membersApi from '../api/members.api.js';
 import QrDisplay from '../components/qr/QrDisplay.jsx';
 import LoadingSpinner from '../components/ui/LoadingSpinner.jsx';
@@ -7,9 +8,11 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getApiError } from '../api/client.js';
 import { formatDateShort, fullName } from '../utils/format.js';
+import { ROLES } from '../utils/roles.js';
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const isTrainer = user.role === ROLES.TRAINER;
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -19,14 +22,19 @@ export default function ProfilePage() {
     setLoading(true);
     setError('');
     try {
-      const data = await membersApi.getMyProfile();
-      setProfile(data);
+      if (isTrainer) {
+        const me = await authApi.getMe();
+        setProfile(me);
+      } else {
+        const data = await membersApi.getMyProfile();
+        setProfile(data);
+      }
     } catch (err) {
       setError(getApiError(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isTrainer]);
 
   useEffect(() => {
     load();
@@ -49,6 +57,84 @@ export default function ProfilePage() {
   if (loading) return <LoadingSpinner />;
   if (error && !profile) {
     return <p className="rounded-lg bg-red-500/10 p-4 text-red-400">{error}</p>;
+  }
+
+  if (isTrainer) {
+    const trainer = profile?.trainer;
+
+    return (
+      <div>
+        <PageHeader
+          title="My Profile"
+          description="Your trainer account and contact details"
+        />
+
+        {error && (
+          <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-400">{error}</p>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+            <h2 className="mb-4 text-lg font-semibold text-white">Account</h2>
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-slate-500">Name</dt>
+                <dd className="font-medium text-white">{fullName(user)}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Email</dt>
+                <dd className="text-slate-200">{user.email}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Role</dt>
+                <dd className="text-slate-200">Trainer</dd>
+              </div>
+              {trainer?.phone && (
+                <div>
+                  <dt className="text-slate-500">Phone</dt>
+                  <dd className="text-slate-200">{trainer.phone}</dd>
+                </div>
+              )}
+            </dl>
+          </section>
+
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+            <h2 className="mb-4 text-lg font-semibold text-white">Specialty</h2>
+            {trainer?.specialty ? (
+              <p className="inline-block rounded-full bg-slate-800 px-3 py-1 text-sm text-teal-400">
+                {trainer.specialty}
+              </p>
+            ) : (
+              <p className="text-sm text-slate-400">No specialty listed.</p>
+            )}
+            {trainer?.bio && (
+              <p className="mt-4 text-sm leading-relaxed text-slate-300">{trainer.bio}</p>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 lg:col-span-2">
+            <h2 className="text-lg font-semibold text-white">Quick links</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Manage your assigned members and scan QR codes for check-in.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                to="/members"
+                className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500"
+              >
+                View my members
+              </Link>
+              <Link
+                to="/attendance"
+                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                Attendance scanner
+              </Link>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
   }
 
   const trainer = profile?.trainer;
