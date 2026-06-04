@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+  }
+}
+
+#fitcore-qr-region video {
+  border-radius: 0.75rem;
+  width: 100% !important;
+  object-fit: cover;
+}
